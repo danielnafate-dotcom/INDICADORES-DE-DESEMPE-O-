@@ -1,0 +1,2983 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Evaluación de KPI - Elaborado: Ing. Daniel Nafate</title>
+  <style>
+/* =====================================================================
+   Evaluación de KPI - Elaborado: Ing. Daniel Nafate
+   Paleta idéntica a la aplicación original en VB
+   ===================================================================== */
+:root {
+  --bg: #0f1117;
+  --card: #1a1d26;
+  --border: #2a2e3d;
+  --header: #202430;
+  --text: #f0f2f5;
+  --muted: #828899;
+  --blue: #0a84ff;
+  --purple: #af52de;
+  --green: #30d158;
+  --orange: #ff9f0a;
+  --red: #ff453a;
+  --sel: #232838;
+  --row-ok: #121e18;
+  --row-warn: #201c12;
+  --row-bad: #231416;
+  --font: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 13px;
+}
+
+button, input, select { font-family: inherit; }
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
+
+/* ---------- Barra de título ---------- */
+.titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 18px;
+  font-size: 12px;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  background: var(--header);
+}
+
+/* ---------- Panel superior ---------- */
+.panel-top {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  padding: 12px 15px;
+}
+
+.cards {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+
+.card {
+  flex: 0 0 185px;
+  height: 110px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 8px;
+}
+.card-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  height: 40px;
+  line-height: 1.3;
+  overflow: hidden;
+}
+.card-title.blue { color: var(--blue); font-size: 10.5px; }
+.card-val { font-size: 21px; font-weight: 700; margin-top: 4px; color: var(--text); }
+.card-val.global { font-size: 24px; color: var(--green); }
+
+.eval { flex: 0 0 640px; max-width: 100%; }
+.eval-title { font-size: 10.5px; font-weight: 700; color: var(--blue); margin-bottom: 6px; }
+.eval-grid {
+  display: grid;
+  grid-template-columns: 62px 1fr 68px 1fr;
+  gap: 6px 8px;
+  align-items: center;
+}
+.eval-grid label { font-size: 10.5px; color: var(--muted); }
+.eval-grid input {
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 4px 6px;
+  font-size: 11.5px;
+  min-width: 0;
+}
+.eval-btns { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 12px; }
+
+/* ---------- Botones ---------- */
+.btn {
+  border: 0;
+  background: var(--border);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 7px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn:hover { filter: brightness(1.18); }
+.btn:active { filter: brightness(0.95); }
+.btn.blue { background: var(--blue); }
+.btn.green { background: var(--green); color: #000; }
+.btn.red { background: var(--red); }
+.btn.purple { background: var(--purple); }
+
+/* ---------- Pestañas ---------- */
+.tabs {
+  display: flex;
+  gap: 2px;
+  padding: 0 15px;
+  border-bottom: 1px solid var(--border);
+}
+.tab {
+  background: transparent;
+  color: var(--muted);
+  border: 0;
+  border-bottom: 3px solid transparent;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 9px 16px;
+  cursor: pointer;
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--text); border-bottom-color: var(--blue); background: var(--card); }
+
+.tab-page { display: none; padding: 0 15px 20px; }
+.tab-page.active { display: block; }
+
+/* ---------- Filtros ---------- */
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  padding: 12px 0 6px;
+}
+.filtros .lbl { font-size: 12px; font-weight: 700; white-space: nowrap; }
+.filtros .lbl.orange { color: var(--orange); }
+.filtros .lbl.blue { color: var(--blue); }
+.filtros .lbl.muted { color: var(--muted); }
+.filtros select, .filtros input {
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 6px 8px;
+  font-size: 12.5px;
+}
+.filtros select { font-weight: 700; }
+#cmbAreaEvaluada { width: 240px; }
+#cmbFiltroSeccion { width: 320px; }
+#txtBuscar { flex: 1 1 160px; min-width: 120px; }
+
+.crud { display: flex; flex-wrap: wrap; gap: 8px; padding: 6px 0 10px; }
+
+/* ---------- Grid ---------- */
+.grid-wrap {
+  overflow: auto;
+  max-height: calc(100vh - 360px);
+  min-height: 280px;
+  border: 1px solid var(--border);
+}
+table.grid {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  min-width: 960px;
+}
+.grid thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--header);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: left;
+  height: 45px;
+  padding: 0 10px;
+}
+.grid td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  vertical-align: middle;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  height: 42px;
+}
+.grid tbody tr { background: var(--bg); cursor: default; }
+.grid tbody tr.ok { background: var(--row-ok); }
+.grid tbody tr.warn { background: var(--row-warn); }
+.grid tbody tr.bad { background: var(--row-bad); }
+.grid tbody tr.sel { background: var(--sel); }
+.grid td.ed:hover { box-shadow: inset 0 0 0 1px var(--border); }
+.grid .c-regla { color: var(--blue); font-weight: 700; }
+.grid .num { text-align: right; }
+.grid .ctr { text-align: center; }
+.grid .neg { color: var(--red); font-weight: 700; }
+.grid .cumpl-ok { color: var(--green); font-weight: 700; }
+.grid .cumpl-warn { color: var(--orange); font-weight: 700; }
+.grid .cumpl-bad { color: var(--red); font-weight: 700; }
+.grid .ev-link { color: var(--blue); text-decoration: underline; font-size: 11.5px; cursor: pointer; }
+.grid .ev-empty { color: var(--muted); }
+.grid .ev-edit {
+  margin-left: 6px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 11px;
+  padding: 0 5px;
+  cursor: pointer;
+}
+.grid .ev-edit:hover { color: var(--text); }
+.grid .empty-msg { text-align: center; color: var(--muted); padding: 40px 10px; }
+.grid td input.inline {
+  width: 100%;
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--blue);
+  padding: 4px 6px;
+  font-size: 12px;
+}
+
+/* ---------- Analítica ---------- */
+.analytics { overflow: auto; padding: 20px; background: var(--bg); }
+.chart-panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+.chart-panel svg { display: block; }
+
+/* ---------- Cronograma ---------- */
+.cron-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  background: var(--card);
+  padding: 8px 12px;
+  margin-top: 12px;
+}
+.cron-head .ttl { font-size: 12px; font-weight: 700; margin-right: auto; }
+.cron-wrap { display: flex; flex-wrap: wrap; gap: 15px; padding: 15px 0; }
+.cal-card {
+  flex: 0 0 360px;
+  max-width: 100%;
+  min-height: 290px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 10px 12px 12px;
+}
+.cal-title { font-size: 12px; font-weight: 700; margin-bottom: 8px; min-height: 18px; }
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: 33px;
+  background: var(--bg);
+  height: 240px;
+}
+.cal-hd { display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: var(--muted); }
+.cal-day { display: flex; align-items: center; justify-content: center; font-size: 11px; margin: 1px; }
+.cal-day.act { color: #000; font-weight: 700; font-size: 11.5px; cursor: pointer; }
+
+/* ---------- Diálogos ---------- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+.dlg {
+  background: var(--card);
+  border: 1px solid var(--border);
+  max-width: 100%;
+  max-height: 100%;
+  overflow: auto;
+  padding: 18px 20px 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+.dlg-title { margin: 0 0 12px; font-size: 14px; }
+.dlg-sec { color: var(--blue); font-weight: 700; font-size: 12.5px; margin-bottom: 14px; }
+.dlg-text { white-space: pre-wrap; font-size: 13px; line-height: 1.45; margin: 0 0 16px; }
+.dlg-note { color: var(--muted); font-size: 11.5px; line-height: 1.4; margin: 14px 0 18px; }
+.dlg-grid { display: grid; grid-template-columns: 170px 1fr; gap: 10px 10px; align-items: center; }
+.dlg-grid label { font-size: 12px; }
+.dlg-grid input, .dlg-input {
+  width: 100%;
+  background: var(--bg);
+  color: #fff;
+  border: 1px solid var(--border);
+  padding: 5px 7px;
+  font-size: 12.5px;
+}
+.dlg-max { font-size: 11px; color: var(--muted); }
+.ev-row { display: flex; gap: 5px; }
+.ev-row input { flex: 1 1 auto; min-width: 0; }
+.ev-row button { background: var(--border); color: #fff; border: 0; width: 36px; cursor: pointer; }
+.dlg-btns { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+.dlg-icon { font-size: 22px; margin-right: 10px; }
+.dlg-head { display: flex; align-items: center; margin-bottom: 10px; }
+.viewer { text-align: center; }
+.viewer img { max-width: min(88vw, 1100px); max-height: 74vh; display: block; margin: 0 auto 12px; }
+
+@media (max-width: 1150px) {
+  .panel-top { flex-direction: column; }
+  .eval { flex: 1 1 auto; width: 100%; }
+}
+@media (max-width: 640px) {
+  .dlg-grid { grid-template-columns: 1fr; }
+  #cmbAreaEvaluada, #cmbFiltroSeccion { width: 100%; }
+  .eval-grid { grid-template-columns: 62px 1fr; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* ---------- Pantalla de inicio ---------- */
+[hidden] { display: none !important; }
+.filtros .lbl.purple { color: var(--purple); }
+#cmbDireccion { width: 190px; }
+.card-sub { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+.home { padding: 26px 20px 40px; max-width: 1500px; margin: 0 auto; }
+.home-title { margin: 0 0 6px; font-size: 22px; font-weight: 700; }
+.home-sub { margin: 0 0 22px; color: var(--muted); font-size: 13px; max-width: 70ch; line-height: 1.5; }
+.home-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; align-items: start; }
+
+.dir-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 16px 16px 14px;
+  text-align: left;
+  color: var(--text);
+  font: inherit;
+}
+.dir-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+.dir-name { font-size: 16px; font-weight: 700; }
+.dir-sub { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+.dir-score { font-size: 26px; font-weight: 700; line-height: 1; }
+.dir-empty { color: var(--muted); font-size: 12.5px; line-height: 1.45; margin: 4px 0 14px; }
+.dir-areas { display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px; }
+.dir-area {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 10px;
+  align-items: center;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  padding: 8px 10px;
+  cursor: pointer;
+  text-align: left;
+}
+.dir-area:hover { border-color: var(--blue); }
+.dir-area-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dir-area-pct { font-weight: 700; }
+.dir-area .bar { grid-column: 1 / -1; display: block; height: 4px; background: var(--border); }
+.dir-area .bar b { display: block; height: 100%; }
+.dir-foot { display: flex; gap: 8px; }
+.dir-new {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 150px;
+  border-style: dashed;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+.dir-new:hover { color: var(--text); border-color: var(--blue); }
+.dir-new .plus { font-size: 28px; line-height: 1; }
+
+.filtros .break { flex-basis: 100%; height: 0; }
+.dir-score.nd { font-size: 13px; font-weight: 600; }
+
+</style>
+</head>
+<body>
+  <div class="titlebar">
+    <span>Evaluación de KPI - Elaborado: Ing. Daniel Nafate</span>
+    <button class="btn" id="btnHome" hidden>← Todas las direcciones</button>
+  </div>
+
+  <!-- ===== Pantalla de inicio: direcciones ===== -->
+  <main class="home" id="home">
+    <h1 class="home-title">Direcciones a evaluar</h1>
+    <p class="home-sub">Elige una dirección o entra directo a una de sus áreas. El porcentaje es el cumplimiento global con lo capturado hasta ahora.</p>
+    <div class="home-grid" id="homeGrid"></div>
+  </main>
+
+  <div id="appView" hidden>
+
+  <!-- ===== Panel superior: tarjetas + datos de la evaluación ===== -->
+  <header class="panel-top">
+    <div class="cards" id="pnlCardsContainer"></div>
+
+    <div class="eval">
+      <div class="eval-title">DATOS DE LA EVALUACIÓN</div>
+      <div class="eval-grid">
+        <label for="txtNombreEvaluado">Evaluado:</label>
+        <input id="txtNombreEvaluado" autocomplete="off">
+        <label for="txtNombreEvaluador">Evaluador:</label>
+        <input id="txtNombreEvaluador" autocomplete="off">
+        <label for="txtPuestoEvaluado">Puesto:</label>
+        <input id="txtPuestoEvaluado" autocomplete="off">
+        <label for="txtPuestoEvaluador">Puesto:</label>
+        <input id="txtPuestoEvaluador" autocomplete="off">
+      </div>
+      <div class="eval-btns">
+        <button class="btn blue" id="btnCalcular">🔄 Recalcular</button>
+        <button class="btn" id="btnGuardarLocal">💾 Guardar</button>
+        <button class="btn" id="btnCargarLocal">📂 Cargar</button>
+        <button class="btn" id="btnExportarPDF">📄 Generar PDF</button>
+        <button class="btn" id="btnLimpiarCampos">🧹 Limpiar</button>
+        <button class="btn red" id="btnReiniciarArea">♻️ Reiniciar</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== Pestañas ===== -->
+  <nav class="tabs" role="tablist">
+    <button class="tab active" role="tab" data-tab="captura">📝 Captura de Evaluación</button>
+    <button class="tab" role="tab" data-tab="analytics">📊 Visualización de Avances</button>
+    <button class="tab" role="tab" data-tab="cronograma">📅 Cronograma de Fechas</button>
+  </nav>
+
+  <!-- ===== Captura ===== -->
+  <section class="tab-page active" id="tab-captura">
+    <div class="filtros">
+      <span class="lbl purple">🏛️ DIRECCIÓN:</span>
+      <select id="cmbDireccion"></select>
+      <span class="lbl orange">🏢 ÁREA:</span>
+      <select id="cmbAreaEvaluada"></select>
+      <button class="btn purple" id="btnNuevaArea">➕ Nueva Área</button>
+      <button class="btn" id="btnQuitarArea">➖ Quitar Área</button>
+      <span class="break"></span>
+      <span class="lbl blue">🗂️ SUBSECCIÓN:</span>
+      <select id="cmbFiltroSeccion"></select>
+      <span class="lbl muted">🔎 BUSCAR:</span>
+      <input id="txtBuscar" type="search" autocomplete="off">
+    </div>
+
+    <div class="crud">
+      <button class="btn green" id="btnAgregarActividad">➕ Agregar Actividad</button>
+      <button class="btn" id="btnModificarActividad">✏️ Modificar</button>
+      <button class="btn red" id="btnEliminarActividad">🗑️ Eliminar</button>
+      <button class="btn purple" id="btnAgregarSeccion">➕ Nueva Sección</button>
+      <button class="btn" id="btnEliminarSeccion">➖ Quitar Sección</button>
+      <button class="btn" id="btnEditarSeccion">⚖️ Ponderación Sección</button>
+    </div>
+
+    <div class="grid-wrap">
+      <table class="grid" id="dgvKPIs">
+        <colgroup>
+          <col style="width:15.1%"><col style="width:20.2%"><col style="width:15.1%">
+          <col style="width:6.7%"><col style="width:6.7%"><col style="width:7.6%">
+          <col style="width:13.4%"><col style="width:15.2%">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Sección</th>
+            <th>Tarea / Indicador</th>
+            <th>Fecha de Entrega / Regla</th>
+            <th class="num">Pond.</th>
+            <th class="ctr">Errores</th>
+            <th class="num">Cumpl.</th>
+            <th>Observaciones</th>
+            <th>Evidencia Fotográfica</th>
+          </tr>
+        </thead>
+        <tbody id="gridBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== Visualización de avances ===== -->
+  <section class="tab-page" id="tab-analytics">
+    <div class="analytics" id="pnlAnalyticsContainer"></div>
+  </section>
+
+  <!-- ===== Cronograma ===== -->
+  <section class="tab-page" id="tab-cronograma">
+    <div class="cron-head">
+      <span class="ttl">PROGRAMACIÓN DE ENTREGAS</span>
+      <button class="btn purple" id="btnExportarCronogramaExcel">📗 Descargar en Excel (.xls)</button>
+      <button class="btn blue" id="btnExportarCronogramaPDF">📕 Generar Reporte PDF para Entrega</button>
+    </div>
+    <div class="cron-wrap" id="pnlCronogramaContainer"></div>
+  </section>
+
+  </div>
+
+  <div id="modalRoot"></div>
+
+  <!-- Librería para generar los PDF (se carga desde CDN) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+'use strict';
+/* =====================================================================
+   Datos originales de cada área (equivalente a CargarDatosXxx del VB).
+   secciones: [nombre, ponderación]
+   filas:     [índice de sección, tarea, fecha/regla, ponderación, errores, cumplimiento, observaciones]
+   ===================================================================== */
+
+const AREAS = [
+  'CONTABILIDAD',
+  'SISTEMAS Y TI',
+  'FONDEO E INVERSIONES',
+  'ADMINISTRACIÓN',
+  'MEJORA CONTINUA',
+  'BUSINESS INTELLIGENCE',
+  'RECURSOS HUMANOS'
+];
+
+const AREA_DEF = {
+  'CONTABILIDAD': {
+    secciones: [
+      ['CAPTURA DE INGRESOS / CONCILIACIONES', 0.33],
+      ['CAPTURA DE GASTOS', 0.33],
+      ['GERENCIA DE CONTABILIDAD', 0.34]
+    ],
+    filas: [
+      [0, 'REFACCIONES_JUNIO', '8 DE CADA MES (HABIL)', 0.1, 0.0, 1.0, ''],
+      [0, 'MOTOS_JUNIO', '8 DE CADA MES (HABIL)', 0.1, 0.0, 1.0, ''],
+      [0, 'VEHICULOS_JUNIO', '8 DE CADA MES (HABIL)', 0.1, 0.0, 1.0, ''],
+      [0, 'INVENTARIOS_JUNIO', '8 DE CADA MES (HABIL)', 0.1, 0.0, 1.0, ''],
+      [0, 'DESEMBOLSOS_JUNIO', '8 DE CADA MES (HABIL)', 0.1, 0.0, 1.0, ''],
+      [0, 'CONCILIACION REF_JUNIO', '10 DE CADA MES (HABIL)', 0.1, 0.0, 1.0, ''],
+      [0, 'CONCILIACION NCA_JUNIO', '10 DE CADA MES (HABIL)', 0.1, 0.0, 1.0, ''],
+      [0, 'CONCILIACION BANCARIAS (INGRESOS)', '10 DE CADA MES (HABIL)', 0.15, 0.0, 1.0, 'Se enviaron algunas bancarias hasta el día 13.'],
+      [0, 'CONCILIACION CLIENTES_JUNIO', '10 DE CADA MES (HABIL)', 0.15, 0.0, 1.0, ''],
+
+      [1, 'CAJAS Y VIATICOS_JUNIO', '8 DE CADA MES (HABIL)', 0.12, 0.0, 1.0, ''],
+      [1, 'PAGO A PROVEEDOR (BANORTE,BBVA,SANTANDER)', '8 DE CADA MES (HABIL)', 0.15, 0.0, 1.0, ''],
+      [1, 'PROVISIONES IMSS_JUNIO', '8 DE CADA MES (HABIL)', 0.12, 0.0, 1.0, ''],
+      [1, 'DEPRECIACIONES Y AMO_JUNIO', '8 DE CADA MES (HABIL)', 0.12, 0.0, 1.0, ''],
+      [1, 'TDC_JUNIO', '8 DE CADA MES (HABIL)', 0.12, 0.0, 1.0, ''],
+      [1, 'NOMINA_JUNIO', '8 DE CADA MES (HABIL)', 0.15, 0.0, 1.0, ''],
+      [1, 'CONCILIACION DEUDORES (CAJA CHICA)', '10 DE CADA MES (HABIL)', 0.12, 0.0, 1.0, ''],
+
+      [2, 'ENVIO DE IMPUESTOS FEDERALES (IVA,ISR,RETENCIONES)', '14 DE CADA MES (HABIL)', 0.2, 0.0, 1.0, ''],
+      [2, 'ENVIO DE IMPUESTOS (ISAN)_JUNIO', '14 DE CADA MES (HABIL)', 0.1, 0.0, 1.0, ''],
+      [2, 'ENVIO DECLARACION INEGI_JUNIO', '14 DE CADA MES (HABIL)', 0.1, 0.0, 1.0, ''],
+      [2, 'VENTAS_JUNIO', '10 DE CADA MES (HABIL)', 0.15, 0.0, 1.0, ''],
+      [2, 'CUENTAS VARIAS_JUNIO', '10 DE CADA MES (HABIL)', 0.15, 0.0, 1.0, ''],
+      [2, 'ENTREGA DE ESTADOS FINANCIEROS PARA REVISION', '17 DE CADA MES (HABIL)', 0.2, 0.0, 1.0, '']
+    ]
+  },
+
+  'SISTEMAS Y TI': {
+    secciones: [
+      ['SOPORTE TÉCNICO', 0.3],
+      ['DESARROLLO EN SISTEMAS', 0.5],
+      ['CONTROL DE INVENTARIO RESPONSIVAS', 0.2]
+    ],
+    filas: [
+      [0, 'TICKETS DE ALTA COMPLEJIDAD', '6 HORAS DESPUES DE LO SOLICITADO', 0.3, 0.0, 1.0, ''],
+      [0, 'TICKETS DE MEDIA COMPLEJIDAD', '3 HORAS DESPUES DE LO SOLICITADO', 0.3, 0.0, 1.0, ''],
+      [0, 'TICKETS DE BAJA COMPLEJIDAD', '30 MINUTOS DESPUES DE LO SOLICITADO', 0.2, 0.0, 0.86, 'Avance 86%'],
+      [0, 'CUMPLIMIENTO DEL PROGRAMA DE MANTENIMIENTO', 'SEGUN PROGRAMA CON REVISION CONTINUA', 0.2, 0.0, 1.0, ''],
+
+      [1, 'DISPONIBILIDAD DE SERVIDORES', 'DIARIO / CONTINUO', 0.15, 0.0, 1.0, ''],
+      [1, 'CUMPLIMIENTO ECOSISTEMA ODOO (MAYO AL 90%)', 'CONTINUO', 0.15, 0.0, 0.9, 'Avance 90%'],
+      [1, 'BAJA A LOS CORREOS DE EXCOLABORADORES', 'INMEDIATO', 0.1, 0.0, 1.0, ''],
+      [1, 'RESPALDOS DIARIOS DEL SERVIDOR', 'DIARIO', 0.15, 0.0, 1.0, ''],
+      [1, 'RENDIMIENTO DE SERVIDORES', 'CONTINUO', 0.1, 0.0, 1.0, ''],
+      [1, 'MESA DE AYUDA POST VENTA 2DA VERSION', '30 DE JUNIO', 0.15, 0.0, 0.8, 'Avance 80%'],
+      [1, 'MESA DE AYUDA TI', 'CONTINUO', 0.1, 0.0, 1.0, ''],
+      [1, 'RECONFIGURACION EN ODOO GUATEMALA', '30 DE JUNIO', 0.15, 0.0, 0.8, 'Avance 80%'],
+
+      [2, 'REVISION DE FACTURAS CONTRAS EQUIPOS DE COMPUTO', 'SEMANAL', 0.5, 0.0, 1.0, ''],
+      [2, 'ASIGNACION DE EQUIPOS Y CONTROL DE INVENTARIOS', 'CONTINUO', 0.5, 0.0, 1.0, '']
+    ]
+  },
+
+  'FONDEO E INVERSIONES': {
+    secciones: [
+      ['INVERSIONISTAS Y OTROS', 0.3],
+      ['BANCOS', 0.7]
+    ],
+    filas: [
+      [0, 'CALCULO Y PAGO DE INVERSIONISTAS Y COMPROBANTES', '4 DE CADA MES (HABIL)', 0.2, 0.0, 1.0, ''],
+      [0, 'CALCULO Y PAGO DE INVERSIONISTAS BANCARIZADOS', '19 DE CADA MES (HABIL)', 0.2, 0.0, 1.0, ''],
+      [0, 'CALCULO Y PAGO INVERSIONISTAS BANCARIZADOS (SIG)', '1 DE CADA MES SIGUIENTE (HABIL)', 0.15, 0.0, 1.0, ''],
+      [0, 'RENOVACIONES DE CONTRATO DE INVERSIONISTAS', 'EN BASE AL CRONOGRAMA', 0.15, 0.0, 1.0, ''],
+      [0, 'REVISION Y ELABORACION DE CONTRATOS', 'BAJO DEMANDA', 0.15, 0.0, 1.0, ''],
+      [0, 'REUNIONES SEMANALES (APARTIR DE JUNIO)', 'SEMANAL', 0.15, 0.0, 1.0, ''],
+
+      [1, 'REQUERIMIENTOS BANCARIOS', '3 DIAS DESPUES DE LO SOLICITADO', 0.15, 0.0, 1.0, ''],
+      [1, 'PAGO DE INTERESES Y CAPITAL BBVA (PLAN PISO)', 'CONSULTA LUNES DE CADA SEMANA', 0.2, 0.0, 1.0, ''],
+      [1, 'PAGO DE INTERESES Y CAPITAL BANORTE (FINCOMEXT)', '21 Y 29 DE CADA MES', 0.2, 0.0, 1.0, ''],
+      [1, 'ACTUALIZACION DE DIRVE DE LINEAS DE CREDITO', 'CONTINUO', 0.1, 0.0, 1.0, ''],
+      [1, 'AUDITORIAS PLAN PISO Y FINCOMEXT', 'SEGUN REQUERIMIENTO', 0.15, 0.0, 1.0, ''],
+      [1, 'RENOVACION DE LINEAS DE CREDITO EN TIEMPO Y FORMA', 'EN TIEMPO Y FORMA', 0.1, 0.0, 1.0, ''],
+      [1, 'APERTURAS DE NUEVAS LINEAS', 'BAJO DEMANDA', 0.1, 0.0, 1.0, '']
+    ]
+  },
+
+  'ADMINISTRACIÓN': {
+    secciones: [
+      ['CAJAS Y VIÁTICOS', 0.2],
+      ['PAGO A PROVEEDORES Y COMBUSTIBLE', 0.2],
+      ['FACTURACIÓN', 0.15],
+      ['CRÉDITO Y COBRANZA', 0.1],
+      ['REFACCIONES', 0.15],
+      ['GERENCIA DE ADMINISTRACIÓN', 0.15],
+      ['SERVICIOS GENERALES', 0.05]
+    ],
+    filas: [
+      [0, 'DISPERSION DE VIATICOS', '1 DIA DESPUES DE LO SOLICITADO', 0.3, 0.0, 1.0, ''],
+      [0, 'DISPERSION DE CAJAS', '1 DIA DESPUES DE LA AUTORIZACION', 0.3, 0.0, 1.0, ''],
+      [0, 'REPORTE DE FUENTES', '4 DIAS DESPUES DE CIERRE DE MES', 0.2, 0.0, 1.0, ''],
+      [0, 'ENTREGA CONTABLE DE CAJAS CHICAS', '5 DIA DE CADA MES', 0.2, 0.0, 1.0, ''],
+
+      [1, 'PAGO A PROVEEDORES', '1 DIA DESPUES DE LO SOLICITADO', 0.25, 0.0, 1.0, ''],
+      [1, 'DISPERSION DE COMBUSTIBLE', 'DENTRO DEL DIA SOLICITADO', 0.2, 0.0, 1.0, ''],
+      [1, 'PAGO DE RENTAS', '1 DE CADA MES / 14 DE CADA MES', 0.2, 0.0, 1.0, ''],
+      [1, 'ENTREGA CONTABLE COMBUSTIBLE Y RENTAS', '5 DIA DE CADA MES', 0.2, 0.0, 1.0, ''],
+      [1, 'CONTRATOS DE ARRENDAMIENTO EN REGULARIZACIÓN', '30 DE CADA MES', 0.15, 0.0, 1.0, ''],
+
+      [2, 'FACTURACIÓN DE CLIENTES CONTADO', '3 DE CADA MES (HABIL)', 0.25, 0.0, 1.0, ''],
+      [2, 'COMPLEMENTOS DE PAGO / CONTABILIDAD', '3 DE CADA MES (HABIL)', 0.25, 0.0, 1.0, ''],
+      [2, 'ENTREGA DE FACTURAS A ADMINISTRACION', 'DENTRO DEL DIA SOLICITADO', 0.25, 0.0, 1.0, ''],
+      [2, 'CONTROL DE FACTURA Y CARTA FACTURA', 'SE TOMARA EN CUENTA PARA EL PROXIMO MES', 0.25, 0.0, 1.0, ''],
+
+      [3, 'CUMPLIMIENTO DE PAGOS', '05 Y 20 DE CADA MES (HABIL)', 0.35, 0.0, 1.0, ''],
+      [3, 'SEGUIMIENTO DE CUENTAS', 'DIARIO', 0.35, 0.0, 1.0, ''],
+      [3, 'AUTORIZACIONES DE CREDITO', 'BAJO DEMANDA', 0.3, 0.0, 1.0, ''],
+
+      [4, 'ENTREGA DE COMPROBANTE DE GASTOS DE CAJA', '04 Y 07 DE CADA MES (HABIL)', 0.5, 0.0, 1.0, ''],
+      [4, 'DOCUMENTOS DE EMBARQUES', '04 Y 07 DE CADA MES (HABIL)', 0.5, 0.0, 1.0, ''],
+
+      [5, 'SOLICITUD DE PAGO A PROVEEDORES', 'DIARIO', 0.25, 0.0, 1.0, ''],
+      [5, 'CUMPLIMIENTO DEL PRESUPUESTO', 'PENDIENTE AL PENDIENTE', 0.25, 0.0, 1.0, ''],
+      [5, 'ELABORACION DE ESTADOS FINANCIEROS', 'MENSUAL', 0.25, 0.0, 1.0, ''],
+      [5, 'NOTAS DE CREDITO', 'BAJO DEMANDA', 0.25, 0.0, 1.0, ''],
+
+      [6, 'SUB-TRABAJOS', 'CONTINUO', 0.5, 0.0, 1.0, ''],
+      [6, 'CUMPLIMIENTO ENTREGA DE PLANTA, SEGUIMIENTO Y MENSUAL', 'PENDIENTE A LA REUNION', 0.5, 0.0, 1.0, '']
+    ]
+  },
+
+  'MEJORA CONTINUA': {
+    secciones: [
+      ['GESTIÓN Y AUDITORÍA DE PROCESOS', 0.5],
+      ['ESTANDARIZACIÓN Y MANUALES DE OPERACIÓN', 0.5]
+    ],
+    filas: [
+      [0, "SEGUIMIENTO A EVIDENCIAS DE LOS KPI'S", '29 DE CADA MES', 0.3, 0.0, 1.0, ''],
+      [0, 'LEVANTAMIENTO DE PROCESOS INCOMPLETOS', '29 DE CADA MES', 0.35, 0.0, 0.9, 'Avance 90%'],
+      [0, 'CUMPLIMIENTO DEL CRONOGRAMA DE REVISION', '29 DE CADA MES', 0.35, 0.0, 0.9, 'Avance 90%'],
+
+      [1, 'ELABORACION DE LA GUIA OPERATIVA DE ODOO', '29 DE CADA MES', 0.35, 0.0, 0.9, 'Avance 90%'],
+      [1, 'REVISION AL MANUAL DE ORGANIZACIÓN', '29 DE CADA MES', 0.25, 0.0, 0.8, 'Avance 80%'],
+      [1, 'REVISION DE DESCRIPTIVAS DE PUESTOS', '29 DE CADA MES', 0.2, 0.0, 1.0, ''],
+      [1, 'REVISION Y AJUSTES A DIAGRAMAS DE FLUJO', '29 DE CADA MES', 0.2, 0.0, 0.8, 'Avance 80%']
+    ]
+  },
+
+  'BUSINESS INTELLIGENCE': {
+    secciones: [
+      ['ANÁLISIS DE VENTAS Y MERCADO (SELL OUT)', 0.5],
+      ['ESTRADÍSTICA, BENCHMARKING Y CONTROLES', 0.5]
+    ],
+    filas: [
+      [0, 'ENTREGA DE REPORTE DE VENTAS EN CIERRE DE MES', 'AL CIERRE DE VENTAS', 0.25, 0.0, 1.0, ''],
+      [0, 'ENTREGA DE REPORTE Y ANALISIS DE REFACCIONES PERU', 'PRIMER SEMANA DEL MES', 0.25, 0.0, 1.0, ''],
+      [0, 'ENTREGA DE SELL OUT MEXICO', '15 DE CADA MES (HABIL)', 0.25, 0.0, 1.0, ''],
+      [0, 'ESTIMACION MARKET SHARE', '5 DE CADA MES (HABIL)', 0.25, 0.0, 1.0, ''],
+
+      [1, 'REPORTE DE BENCH MARKING DE PRECIOS', '5 DE CADA MES (HABIL)', 0.3, 0.0, 0.9, 'Avance 90%'],
+      [1, "SEGUIMIENTO A EVIDENCIAS DE LOS KPI'S", '25 DE CADA MES (HABIL)', 0.25, 0.0, 0.9, 'Avance 90%'],
+      [1, 'APLICACIÓN DE CONTROL DE VIAJES (VIATICO Y FL)', 'CRONOGRAMA (ENTREGA EL 20)', 0.25, 0.0, 0.8, 'Avance 80%'],
+      [1, 'SEGUIMIENTO CON FECHAS ACORDADAS', 'CON FECHAS ACORDADAS', 0.2, 0.0, 0.9, 'Avance 90%']
+    ]
+  },
+
+  'RECURSOS HUMANOS': {
+    secciones: [
+      ['FORMACIÓN Y DESARROLLO', 0.15],
+      ['SEGURIDAD E HIGIENE', 0.1],
+      ['RECLUTAMIENTO', 0.25],
+      ['SEGUIMIENTO A CRÉDITO', 0.05],
+      ['NÓMINAS', 0.2],
+      ['GERENCIA DE RRHH', 0.25]
+    ],
+    filas: [
+      [0, 'INDUCCIONES A NUEVO PERSONAL', '25 DE CADA MES (HABIL)', 0.15, 0.0, 1.0, ''],
+      [0, 'ENVIO DE AVISOS', 'FECHAS DE PROGRAMACION EN LOS ALTAS', 0.15, 0.0, 1.0, ''],
+      [0, 'SEGUIMIENTO AL SIRCE Y REUNION COMISIONES', '25 DE CADA MES (HABIL)', 0.15, 0.0, 0.5, 'Avance 50%'],
+      [0, 'RENOVACION DE CONTRATOS', 'FECHA DE PROGRAMACION A LA PERMANENCIA DE COLABORADOR', 0.15, 0.0, 0.55, 'Avance 55%'],
+      [0, 'PROYECTO DE GAMIFICACION', 'PROYECTO EN CURSO', 0.15, 0.0, 0.5, 'Avance 50%'],
+      [0, 'ORGANIZACIÓN DE EVENTOS', 'SEGUN CALENDARIO DE EVENTOS', 0.15, 0.0, 1.0, ''],
+      [0, 'CAPACITACIÓN DE REFUERZO', 'SEGUN MATRIZ DE CAPACITACION', 0.1, 0.0, 0.88, 'Avance 88%'],
+
+      [1, 'VERIFICAR LAS INSPECCIONES Y SEGUIMIENTO A CAMBIOS', 'SEGUN PROGRAMA CON REVISION CONTINUA', 0.25, 0.0, 1.0, ''],
+      [1, 'CAPACITACIÓN DEL PERSONAL EN SEGURIDAD Y HIGIENE', 'CUMPLIMIENTO DEL PROGRAMA', 0.25, 0.0, 1.0, ''],
+      [1, 'DICTAMEN PARA BANCOS PENDIENTES', 'PENDIENTE', 0.25, 0.0, 0.28, 'Avance 28%'],
+      [1, 'CAPACITACIÓN DE BRIGADAS', 'SEGUN PROGRAMA CON REVISION CONTINUA', 0.25, 0.0, 1.0, ''],
+
+      [2, 'SEGUIMIENTO AL PROCESO DE RECLUTAMIENTO', 'TIEMPO MAXIMO PARA CUBRIR VACANTES', 0.5, 0.0, 1.0, ''],
+      [2, 'VACANTES FUERA DE TIEMPO', 'DENTRO DE TIEMPO', 0.5, 0.0, 0.89, 'Avance 89%'],
+
+      [3, 'SEGUIMIENTO AL CIRCULO DE CREDITO', 'ATENCION RAPIDA A LOS SOLICITUDES', 0.5, 0.0, 1.0, ''],
+      [3, 'SEGUIMIENTO AL CHECK LIST DE EXPEDIENTES', 'CONTINUO', 0.5, 0.0, 1.0, ''],
+
+      [4, 'PAGOS AL IMSS', 'DETERMINADO CON FECHA', 0.18, 0.0, 1.0, ''],
+      [4, 'PAGO FONACOT', 'MES CON MES DENTRO DE FECHA', 0.18, 0.0, 1.0, ''],
+      [4, 'PAGO IMPUESTO SOBRE NOMINA', 'MES CON MES DENTRO DE FECHA', 0.18, 0.0, 1.0, ''],
+      [4, 'TIMBRADO EN TIEMPO Y FORMA DE LA NOMINA', 'DOS DIAS DESPUES DE CADA QUINCENA', 0.18, 0.0, 1.0, ''],
+      [4, 'ENVIO DE PRENOMINA', '4 DIAS ANTES DE CADA QUINCENA', 0.14, 0.0, 1.0, ''],
+      [4, 'REVISION DE NOMINAS (PERU Y GUATEMALA)', 'CADA QUINCENA', 0.14, 0.0, 1.0, ''],
+
+      [5, 'INFORME MENSUAL DE RRHH', 'CADA FIN DE MES', 0.2, 0.0, 1.0, ''],
+      [5, 'PROYECTO DE GAMIFICACION', 'PROYECTO EN CURSO', 0.2, 0.0, 0.5, 'Avance 50%'],
+      [5, 'SEGUIMIENTO A BAJAS DE COLABORADORES', 'AL MOMENTO DE LA BAJA', 0.2, 0.0, 1.0, ''],
+      [5, 'REVISIÓN DE COMISIONES', 'MES CON MES EN FECHA', 0.2, 0.0, 1.0, ''],
+      [5, 'MANUAL DE RECURSOS HUMANOS', 'EN REVISION', 0.2, 0.0, 0.2, 'Avance 20%']
+    ]
+  }
+};
+
+
+'use strict';
+/* =====================================================================
+   Reportes PDF. Replica el dibujo que hacía el programa en VB con
+   PrintDocument ("Microsoft Print to PDF"), usando jsPDF.
+   Las coordenadas están en centésimas de pulgada (como GDI+): hoja carta
+   = 850 x 1100. 1 unidad = 0.72 pt.
+   ===================================================================== */
+
+const PDF_U = 0.72;
+const PDF_W = 850;
+const PDF_H = 1100;
+
+const PC = {
+  white: [255, 255, 255],
+  dark: [20, 24, 33],
+  muted: [100, 105, 120],
+  border: [210, 215, 225],
+  headerBg: [32, 38, 52],
+  blue: [10, 132, 255],
+  green: [48, 209, 88],
+  orange: [255, 159, 10],
+  red: [255, 69, 58]
+};
+
+function pdfCtx(doc) {
+  return {
+    doc,
+    fill(x, y, w, h, rgb) {
+      doc.setFillColor(rgb[0], rgb[1], rgb[2]);
+      doc.rect(x * PDF_U, y * PDF_U, w * PDF_U, h * PDF_U, 'F');
+    },
+    rect(x, y, w, h, rgb, lw) {
+      doc.setDrawColor(rgb[0], rgb[1], rgb[2]);
+      doc.setLineWidth((lw || 1) * PDF_U);
+      doc.rect(x * PDF_U, y * PDF_U, w * PDF_U, h * PDF_U, 'S');
+    },
+    line(x1, y1, x2, y2, rgb, lw) {
+      doc.setDrawColor(rgb[0], rgb[1], rgb[2]);
+      doc.setLineWidth((lw || 1) * PDF_U);
+      doc.line(x1 * PDF_U, y1 * PDF_U, x2 * PDF_U, y2 * PDF_U);
+    },
+    font(size, bold) {
+      doc.setFont('helvetica', bold ? 'bold' : 'normal');
+      doc.setFontSize(size);
+    },
+    // alto de un renglón (en unidades) para un tamaño de fuente en pt
+    lh(size) { return (size * 1.3) / PDF_U; },
+    wrap(text, size, bold, wUnits) {
+      this.font(size, bold);
+      return doc.splitTextToSize(String(text), wUnits * PDF_U);
+    },
+    // Dibuja texto. Si se da w/h se comporta como un RectangleF de GDI+.
+    str(text, x, y, o) {
+      o = o || {};
+      const size = o.size || 8;
+      const bold = !!o.bold;
+      const color = o.color || [0, 0, 0];
+      const align = o.align || 'left';
+      const w = o.w == null ? null : o.w;
+      const h = o.h == null ? null : o.h;
+      const valign = o.valign || 'top';
+      const wrap = o.wrap !== false;
+      this.font(size, bold);
+      doc.setTextColor(color[0], color[1], color[2]);
+      let lines = (w !== null && wrap) ? doc.splitTextToSize(String(text), w * PDF_U) : String(text).split('\n');
+      if (o.maxLines && lines.length > o.maxLines) lines = lines.slice(0, o.maxLines);
+      const lh = this.lh(size);
+      const totalH = lines.length * lh;
+      let y0 = y;
+      if (h !== null) {
+        if (valign === 'middle') y0 = y + (h - totalH) / 2;
+        else if (valign === 'bottom') y0 = y + h - totalH;
+      }
+      let ax = x;
+      if (w !== null) {
+        if (align === 'center') ax = x + w / 2;
+        else if (align === 'right') ax = x + w;
+      }
+      lines.forEach(function (ln, i) {
+        doc.text(ln, ax * PDF_U, (y0 + i * lh) * PDF_U, { baseline: 'top', align: align });
+      });
+      return totalH;
+    }
+  };
+}
+
+function pdfNuevoDoc() {
+  if (!window.jspdf || !window.jspdf.jsPDF) {
+    throw new Error('No se pudo cargar la librería de PDF (jsPDF). Revisa tu conexión a internet y recarga la página.');
+  }
+  return new window.jspdf.jsPDF({ unit: 'pt', format: 'letter', orientation: 'portrait' });
+}
+
+const pPct0 = function (v) { return Math.round(v * 100) + '%'; };
+const pPct1 = function (v) { return (v * 100).toFixed(1) + '%'; };
+const pBaseName = function (p) { return String(p).split(/[\\/]/).pop(); };
+
+/* =====================================================================
+   REPORTE EJECUTIVO DE KPI  (ImprimirPaginaPDF_Ajustado)
+   d = { area, evaluado, puestoEvaluado, evaluador, puestoEvaluador,
+         fechaEmision, secciones:[{nombre,pond,valor}], valGlobal, filas:[row] }
+   ===================================================================== */
+function buildReportePdf(d) {
+  const doc = pdfNuevoDoc();
+  const P = pdfCtx(doc);
+
+  const leftMargin = 35;
+  const rightMargin = PDF_W - 35;
+  const pageWidth = rightMargin - leftMargin;
+  const bottomMargin = PDF_H - 100;
+
+  const colPct = [0.155, 0.255, 0.17, 0.07, 0.08, 0.075, 0.195];
+  const colWidths = colPct.map(function (p) { return pageWidth * p; });
+  const colHeaders = ['Subsección', 'Tarea / Indicador', 'Fecha / Regla', 'Pond.', 'Errores', 'Cumpl.', 'Evidencia Fotográfica'];
+  const colAligns = ['left', 'left', 'left', 'right', 'center', 'right', 'left'];
+  const padX = 6;
+
+  const filas = d.filas;
+  let idx = 0;
+  let pagina = 0;
+  let hayMas = true;
+
+  while (hayMas) {
+    pagina++;
+    if (pagina > 1) doc.addPage();
+    let y = 30;
+
+    // Número de página
+    P.str('Página ' + pagina, leftMargin, PDF_H - 28, { size: 7, color: PC.muted, align: 'right', w: pageWidth, h: 12 });
+
+    if (idx === 0 && pagina === 1) {
+      let tamT = 13;
+      P.font(tamT, true);
+      while (tamT > 7 && doc.getTextWidth('EVALUACIÓN DE KPI - ÁREA: ' + d.area) > pageWidth * PDF_U) { tamT -= 0.5; P.font(tamT, true); }
+      P.str('EVALUACIÓN DE KPI - ÁREA: ' + d.area, leftMargin, y, { size: tamT, bold: true, color: PC.dark, wrap: false });
+      y += 24;
+
+      const nomEvaluado = d.evaluado.trim() === '' ? 'Sin Especificar' : d.evaluado.trim();
+      const pstEvaluado = d.puestoEvaluado.trim() === '' ? 'N/A' : d.puestoEvaluado.trim();
+      const nomEvaluador = d.evaluador.trim() === '' ? 'Sin Especificar' : d.evaluador.trim();
+      const pstEvaluador = d.puestoEvaluador.trim() === '' ? 'N/A' : d.puestoEvaluador.trim();
+
+      P.str('Evaluado: ' + nomEvaluado + ' (' + pstEvaluado + ')   |   Evaluador: ' + nomEvaluador + ' (' + pstEvaluador + ')',
+        leftMargin, y, { size: 8, color: PC.muted });
+      y += 15;
+      P.str('Fecha de Emisión: ' + d.fechaEmision, leftMargin, y, { size: 8, color: PC.muted });
+      y += 16;
+
+      P.line(leftMargin, y, rightMargin, y, PC.blue, 2);
+      y += 12;
+
+      // Tarjetas: máximo 4 por renglón
+      const totalCards = d.secciones.length + 1;
+      const renglonesCards = Math.ceil(totalCards / 4);
+      const porRenglon = Math.ceil(totalCards / renglonesCards);
+      const cardGap = 8;
+      const cardW = (pageWidth - cardGap * (porRenglon - 1)) / porRenglon;
+
+      let nombreH = 10;
+      d.secciones.forEach(function (s) {
+        const n = P.wrap(s.nombre, 6.5, true, Math.floor(cardW - 12)).length;
+        nombreH = Math.max(nombreH, n * P.lh(6.5));
+      });
+      const cardH = 6 + nombreH + 4 + 22 + 6;
+
+      for (let k = 0; k < totalCards; k++) {
+        const fila = Math.floor(k / porRenglon);
+        const col = k % porRenglon;
+        const xPos = leftMargin + col * (cardW + cardGap);
+        const yPos = y + fila * (cardH + cardGap);
+        P.fill(xPos, yPos, cardW, cardH, [245, 247, 250]);
+        P.rect(xPos, yPos, cardW, cardH, PC.border, 1);
+        const yValor = yPos + 6 + nombreH + 4;
+
+        if (k < d.secciones.length) {
+          const sec = d.secciones[k];
+          P.str(sec.nombre, xPos + 6, yPos + 6, { size: 6.5, bold: true, color: PC.muted, w: cardW - 12, h: nombreH + 2 });
+          P.str(pPct1(sec.valor), xPos + 6, yValor, { size: 12, bold: true, color: PC.blue });
+          P.str('Peso ' + pPct0(sec.pond), xPos + 6, yValor, { size: 6.5, color: PC.muted, align: 'right', w: cardW - 12, h: 22, valign: 'middle' });
+        } else {
+          const colorGlobal = d.valGlobal >= 0.9 ? PC.green : (d.valGlobal >= 0.7 ? PC.orange : PC.red);
+          P.str('CUMPLIMIENTO GLOBAL', xPos + 6, yPos + 6, { size: 6.5, bold: true, color: PC.muted, w: cardW - 12, h: nombreH + 2 });
+          P.str(pPct1(d.valGlobal), xPos + 6, yValor, { size: 12, bold: true, color: colorGlobal });
+        }
+      }
+      y += renglonesCards * cardH + (renglonesCards - 1) * cardGap + 15;
+    }
+
+    // Encabezado de la tabla
+    const headerH = 26;
+    P.fill(leftMargin, y, pageWidth, headerH, PC.headerBg);
+    let currentX = leftMargin;
+    for (let i = 0; i < colHeaders.length; i++) {
+      P.str(colHeaders[i], currentX + padX, y, {
+        size: 8, bold: true, color: PC.white, align: colAligns[i],
+        w: colWidths[i] - padX * 2, h: headerH, valign: 'middle', wrap: false
+      });
+      currentX += colWidths[i];
+    }
+    y += headerH;
+
+    let isAltRow = false;
+    let filasEnPagina = 0;
+
+    while (idx < filas.length) {
+      const row = filas[idx];
+      const seccion = String(row.sec);
+      const tarea = String(row.tarea);
+      const regla = String(row.regla);
+      const pond = isFinite(row.pond) ? row.pond : 0;
+      const errs = isFinite(row.err) ? row.err : 0;
+      const cumpl = isFinite(row.cumpl) ? row.cumpl : 1;
+      const evStr = String(row.evid || '');
+      const txtEv = evStr.trim() === '' ? 'Sin foto adjunta' : pBaseName(evStr);
+
+      const hSec = P.wrap(seccion, 7.5, true, Math.floor(colWidths[0] - padX * 2)).length * P.lh(7.5);
+      const hTarea = P.wrap(tarea, 7.5, false, Math.floor(colWidths[1] - padX * 2)).length * P.lh(7.5);
+      const hRegla = P.wrap(regla, 7.5, false, Math.floor(colWidths[2] - padX * 2)).length * P.lh(7.5);
+      const hEv = P.wrap(txtEv, 7.5, false, Math.floor(colWidths[6] - padX * 2)).length * P.lh(7.5);
+      const rowH = Math.max(28, Math.max(Math.max(hSec, hTarea), Math.max(hRegla, hEv)) + 14);
+
+      if (y + rowH > bottomMargin && filasEnPagina > 0) break;
+
+      if (isAltRow) P.fill(leftMargin, y, pageWidth, rowH, [248, 250, 252]);
+
+      currentX = leftMargin;
+      for (let i = 0; i < 7; i++) {
+        const cx = currentX + padX;
+        const cy = y + 3;
+        const cw = colWidths[i] - padX * 2;
+        const ch = rowH - 6;
+        const base = { align: colAligns[i], w: cw, h: ch, valign: 'middle' };
+        switch (i) {
+          case 0: P.str(seccion, cx, cy, Object.assign({ size: 7.5, bold: true, color: PC.dark }, base)); break;
+          case 1: P.str(tarea, cx, cy, Object.assign({ size: 7.5, color: PC.dark }, base)); break;
+          case 2: P.str(regla, cx, cy, Object.assign({ size: 7.5, color: PC.muted }, base)); break;
+          case 3: P.str(pPct0(pond), cx, cy, Object.assign({ size: 7.5, color: PC.dark }, base)); break;
+          case 4: P.str(pPct0(errs), cx, cy, Object.assign({ size: 7.5, bold: true, color: errs > 0 ? PC.red : PC.dark }, base)); break;
+          case 5: {
+            const c = cumpl >= 0.9 ? [0, 140, 60] : (cumpl >= 0.7 ? [200, 100, 0] : PC.red);
+            P.str(pPct0(cumpl), cx, cy, Object.assign({ size: 7.5, bold: true, color: c }, base));
+            break;
+          }
+          case 6: P.str(txtEv, cx, cy, Object.assign({ size: 7.5, color: PC.muted }, base)); break;
+        }
+        currentX += colWidths[i];
+      }
+
+      y += rowH;
+      P.line(leftMargin, y, rightMargin, y, PC.border, 1);
+      isAltRow = !isAltRow;
+      idx++;
+      filasEnPagina++;
+    }
+
+    hayMas = idx < filas.length;
+
+    if (!hayMas) {
+      // Firmas (solo en la última página)
+      const firmaY = PDF_H - 65;
+      const anchoFirma = 160;
+      const centroIzq = leftMargin + pageWidth * 0.28;
+      const centroDer = leftMargin + pageWidth * 0.72;
+
+      const nomEvd = d.evaluado.trim() === '' ? 'EVALUADO' : d.evaluado.trim().toUpperCase();
+      const nomEvr = d.evaluador.trim() === '' ? 'EVALUADOR' : d.evaluador.trim().toUpperCase();
+
+      P.line(centroIzq - anchoFirma / 2, firmaY, centroIzq + anchoFirma / 2, firmaY, PC.muted, 1);
+      P.str(nomEvd, centroIzq - 100, firmaY + 3, { size: 7.5, bold: true, color: PC.dark, align: 'center', w: 200, h: 12, wrap: false });
+      P.str('FIRMA EVALUADO', centroIzq - 100, firmaY + 16, { size: 6.5, bold: true, color: PC.blue, align: 'center', w: 200, h: 12 });
+
+      P.line(centroDer - anchoFirma / 2, firmaY, centroDer + anchoFirma / 2, firmaY, PC.muted, 1);
+      P.str(nomEvr, centroDer - 100, firmaY + 3, { size: 7.5, bold: true, color: PC.dark, align: 'center', w: 200, h: 12, wrap: false });
+      P.str('FIRMA EVALUADOR', centroDer - 100, firmaY + 16, { size: 6.5, bold: true, color: PC.green, align: 'center', w: 200, h: 12 });
+    }
+  }
+  return doc;
+}
+
+/* =====================================================================
+   REPORTE EJECUTIVO DE ENTREGABLES  (ImprimirPaginaCronogramaEjecutivoPDF)
+   d = { area, evaluado, evaluador, fechaEmision, secciones:[{nombre}],
+         actividadesPorDia(nombre) -> Map<dia, string[]>, anio, mes }
+   ===================================================================== */
+function buildCronogramaPdf(d) {
+  const doc = pdfNuevoDoc();
+  const P = pdfCtx(doc);
+
+  const navy = [15, 30, 54];
+  const cardBg = [250, 251, 253];
+  const borderLight = [215, 220, 228];
+  const textDark = [30, 35, 45];
+  const textMuted = [100, 110, 125];
+  const colores = [
+    [10, 132, 255],
+    [40, 167, 69],
+    [230, 120, 0],
+    [130, 50, 200],
+    [220, 50, 50]
+  ];
+
+  const leftMargin = 35;
+  const rightMargin = PDF_W - 35;
+  const pageWidth = rightMargin - leftMargin;
+  let y = 30;
+
+  let tamC = 16;
+  P.font(tamC, true);
+  while (tamC > 8 && doc.getTextWidth('PROGRAMACIÓN OFICIAL DE ENTREGAS - ' + d.area) > pageWidth * PDF_U) { tamC -= 0.5; P.font(tamC, true); }
+  P.str('PROGRAMACIÓN OFICIAL DE ENTREGAS - ' + d.area, leftMargin, y, { size: tamC, bold: true, color: navy, wrap: false });
+  y += 26;
+
+  const evaluadoNom = d.evaluado.trim() === '' ? 'SECTOR / ÁREA EVALUADA' : d.evaluado.trim().toUpperCase();
+  P.str('Responsable: ' + evaluadoNom + '   |   Fecha de Emisión: ' + d.fechaEmision, leftMargin, y, { size: 8.5, color: textMuted });
+  y += 18;
+
+  P.line(leftMargin, y, rightMargin, y, navy, 2.5);
+  y += 20;
+
+  const cardW = (pageWidth - 20) / 2;
+  const cardH = 280;
+  const startX = leftMargin;
+  let currentX = startX;
+  let currentY = y;
+
+  const anio = d.anio;
+  const mes = d.mes;
+  const diasEnMes = new Date(anio, mes + 1, 0).getDate();
+  const diaInicioSemana = new Date(anio, mes, 1).getDay();
+  const diasLetras = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
+
+  for (let i = 0; i < d.secciones.length; i++) {
+    const sec = d.secciones[i];
+    const colorSec = colores[i % colores.length];
+    const dic = d.actividadesPorDia(sec.nombre);
+
+    // Si la fila siguiente no cabe en la hoja, se continúa en otra página
+    if (currentX === startX && currentY + cardH > PDF_H - 90 && currentY > y) {
+      doc.addPage();
+      currentY = 30;
+    }
+
+    P.fill(currentX, currentY, cardW, cardH, cardBg);
+    P.rect(currentX, currentY, cardW, cardH, borderLight, 1);
+
+    P.fill(currentX, currentY, cardW, 28, navy);
+    let tamTitulo = 10;
+    P.font(tamTitulo, true);
+    while (tamTitulo > 6 && doc.getTextWidth(sec.nombre) > (cardW - 20) * PDF_U) {
+      tamTitulo -= 0.5;
+      P.font(tamTitulo, true);
+    }
+    P.str(sec.nombre, currentX + 10, currentY + 5, { size: tamTitulo, bold: true, color: PC.white, wrap: false });
+
+    const calX = currentX + 10;
+    const calY = currentY + 36;
+    const calW = 175;
+    const calH = 230;
+
+    P.fill(calX, calY, calW, calH, PC.white);
+    P.rect(calX, calY, calW, calH, borderLight, 1);
+
+    const cellW = calW / 7;
+    const cellH = calH / 7;
+
+    for (let k = 0; k < 7; k++) {
+      P.str(diasLetras[k], calX + k * cellW, calY, { size: 7.5, bold: true, color: textMuted, align: 'center', w: cellW, h: cellH, valign: 'middle', wrap: false });
+    }
+
+    let currentDay = 1;
+    for (let r = 1; r <= 6; r++) {
+      for (let c = 0; c <= 6; c++) {
+        if (!((r === 1 && c < diaInicioSemana) || currentDay > diasEnMes)) {
+          const rx = calX + c * cellW + 1;
+          const ry = calY + r * cellH + 1;
+          const rw = cellW - 2;
+          const rh = cellH - 2;
+          const tareasDia = dic.get(currentDay);
+          if (tareasDia && tareasDia.length > 0) {
+            P.fill(rx, ry, rw, rh, colorSec);
+            P.str(String(currentDay), rx, ry, { size: 8, bold: true, color: PC.white, align: 'center', w: rw, h: rh, valign: 'middle', wrap: false });
+          } else {
+            P.str(String(currentDay), rx, ry, { size: 8, color: textDark, align: 'center', w: rw, h: rh, valign: 'middle', wrap: false });
+          }
+          currentDay++;
+        }
+      }
+    }
+
+    // Detalle de entregas
+    const listX = currentX + 192;
+    const listY = currentY + 36;
+    const listW = cardW - 202;
+    const listH = calH;
+
+    P.str('DETALLE DE ENTREGAS:', listX, listY, { size: 8, bold: true, color: navy });
+    let taskY = listY + 18;
+
+    if (dic.size === 0) {
+      P.str('No hay entregas asignadas.', listX, taskY, { size: 7.5, color: textMuted });
+    } else {
+      const dias = Array.from(dic.keys()).sort(function (a, b) { return a - b; });
+      outer:
+      for (let di = 0; di < dias.length; di++) {
+        const diaKey = dias[di];
+        const tareas = dic.get(diaKey);
+
+        P.str('• Día ' + diaKey + ':', listX, taskY, { size: 8, bold: true, color: colorSec });
+        taskY += 13;
+
+        for (let ti = 0; ti < tareas.length; ti++) {
+          const t = tareas[ti];
+          const nLines = P.wrap(t, 7.5, false, listW - 8).length;
+          P.str(t, listX + 8, taskY, { size: 7.5, color: textDark, w: listW - 8, h: 30, maxLines: 2 });
+          taskY += Math.max(12, nLines * P.lh(7.5) + 2);
+          if (taskY > listY + listH - 10) break outer;
+        }
+        taskY += 3;
+        if (taskY > listY + listH - 10) break;
+      }
+    }
+
+    currentX += cardW + 20;
+    if (currentX + cardW > rightMargin) {
+      currentX = startX;
+      currentY += cardH + 20;
+    }
+  }
+
+  // Firmas (última página)
+  const firmaY = PDF_H - 65;
+  const anchoFirma = 170;
+  const centroIzq = leftMargin + pageWidth * 0.28;
+  const centroDer = leftMargin + pageWidth * 0.72;
+
+  const nomEvd = d.evaluado.trim() === '' ? 'FIRMA DEL RESPONSABLE DEL ÁREA' : d.evaluado.trim().toUpperCase();
+  const nomEvr = d.evaluador.trim() === '' ? 'FIRMA DE DIRECCIÓN / EVALUADOR' : d.evaluador.trim().toUpperCase();
+
+  P.line(centroIzq - anchoFirma / 2, firmaY, centroIzq + anchoFirma / 2, firmaY, navy, 1);
+  P.str(nomEvd, centroIzq - 100, firmaY + 4, { size: 8, bold: true, color: navy, align: 'center', w: 200, h: 14, wrap: false });
+  P.str('Compromiso y Conformidad', centroIzq - 100, firmaY + 18, { size: 8.5, color: textMuted, align: 'center', w: 200, h: 14 });
+
+  P.line(centroDer - anchoFirma / 2, firmaY, centroDer + anchoFirma / 2, firmaY, navy, 1);
+  P.str(nomEvr, centroDer - 100, firmaY + 4, { size: 8, bold: true, color: navy, align: 'center', w: 200, h: 14, wrap: false });
+  P.str('Seguimiento / Supervisión', centroDer - 100, firmaY + 18, { size: 8.5, color: textMuted, align: 'center', w: 200, h: 14 });
+
+  return doc;
+}
+
+
+'use strict';
+/* =====================================================================
+   Evaluación de KPI - Elaborado: Ing. Daniel Nafate
+   Migración completa de la aplicación VB (Form1) a HTML/CSS/JS.
+   ===================================================================== */
+
+/* ---------- Colores (idénticos al original) ---------- */
+const COL = {
+  bg: '#0f1117', card: '#1a1d26', border: '#2a2e3d', header: '#202430',
+  text: '#f0f2f5', muted: '#828899',
+  blue: '#0a84ff', purple: '#af52de', green: '#30d158', orange: '#ff9f0a', red: '#ff453a'
+};
+const COLORES_SECCIONES = [COL.blue, COL.green, COL.orange, COL.purple, COL.red];
+
+/* ---------- Utilidades ---------- */
+const $ = function (s, r) { return (r || document).querySelector(s); };
+const esc = function (s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+};
+const pad2 = function (n) { return String(n).padStart(2, '0'); };
+const pct0 = function (v) { return Math.round(v * 100) + '%'; };
+const pct1 = function (v) { return (v * 100).toFixed(1) + '%'; };
+const fmt4 = function (v) { return String(parseFloat(Number(v).toFixed(4))); };
+const fmt1 = function (v) { return String(Math.round(v * 10) / 10); };
+const clamp01 = function (v) { return Math.min(Math.max(v, 0), 1); };
+const num = function (v, def) { const n = Number(v); return (v === null || v === undefined || v === '' || !isFinite(n)) ? def : n; };
+
+function stamp(conHora) {
+  const d = new Date();
+  const base = '' + d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate());
+  return conHora ? base + '_' + pad2(d.getHours()) + pad2(d.getMinutes()) + pad2(d.getSeconds()) : base;
+}
+function fechaEmision() {
+  const d = new Date();
+  return pad2(d.getDate()) + '/' + pad2(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' +
+    pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
+}
+function nuevoId() {
+  try { if (window.crypto && crypto.randomUUID) return crypto.randomUUID(); } catch (e) { /* sin contexto seguro */ }
+  return 'ev' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+}
+function descargar(nombre, contenido, tipo) {
+  const blob = contenido instanceof Blob ? contenido : new Blob([contenido], { type: tipo || 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = nombre;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+}
+function pickFile(accept) {
+  return new Promise(function (resolve) {
+    const inp = document.createElement('input');
+    inp.type = 'file';
+    if (accept) inp.accept = accept;
+    inp.style.display = 'none';
+    document.body.appendChild(inp);
+    inp.addEventListener('change', function () { resolve(inp.files[0] || null); inp.remove(); });
+    inp.addEventListener('cancel', function () { resolve(null); inp.remove(); });
+    inp.click();
+  });
+}
+
+/* =====================================================================
+   Estado (equivalente a dtKPIs, listaSecciones, dicCalificacionesGuardadas…)
+   ===================================================================== */
+let rows = [];                       // dtKPIs
+let secciones = [];                  // listaSecciones  {nombre, pond, valor}
+let valGlobal = 0;
+const seccionesExtra = new Set();    // seccionesExtraNombres
+let extrasPendientesArchivo = [];
+let isLoadingData = false;
+let selectedRow = null;
+let rowSeq = 0;
+let db = {};                         // dicCalificacionesGuardadas
+const DB_KEY = 'KPI_Database_Master';
+
+/* ---------- Direcciones (nivel superior) ----------
+   Administración conserva las 7 áreas originales y sus claves de guardado.
+   Las demás direcciones (y las áreas nuevas) se crean desde la interfaz. */
+const DIR_ADMIN = 'ADMINISTRACIÓN';
+const DIRECCIONES_BASE = ['ADMINISTRACIÓN', 'ALMACENES', 'LOGÍSTICA', 'POST VENTA', 'COMERCIAL'];
+let dirActual = DIR_ADMIN;
+
+function leerJSON(k) { try { const v = JSON.parse(db[k] || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; } }
+function direccionesCustom() { return leerJSON('__Direcciones'); }
+function listaDirecciones() { return DIRECCIONES_BASE.concat(direccionesCustom()); }
+function areasCustom(dir) { return leerJSON('__Areas|' + dir); }
+function areasDeDireccion(dir) { return (dir === DIR_ADMIN ? AREAS.slice() : []).concat(areasCustom(dir)); }
+function esAreaBase(dir, area) { return dir === DIR_ADMIN && !!AREA_DEF[area]; }
+function defArea(dir, area) { return esAreaBase(dir, area) ? AREA_DEF[area] : { secciones: [], filas: [] }; }
+function areaKeyOf(dir, area) { return dir === DIR_ADMIN ? area : dir + '/' + area; }
+function areaKey() { return areaKeyOf(dirActual, cmbArea.value); }
+function areaLabel() { return dirActual === DIR_ADMIN ? cmbArea.value : dirActual + ' - ' + cmbArea.value; }
+function limiteSecciones() { return esAreaBase(dirActual, cmbArea.value) ? 0.9 : 1.0; }
+function guardarDB() { try { localStorage.setItem(DB_KEY, JSON.stringify(db)); } catch (e) { /* sin espacio */ } }
+function nombreSeguro(t) {
+  return String(t || '').trim().toUpperCase().replace(/[=|~\/_]/g, ' ').replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function crearFila(sec, tarea, regla, pond, err, cumpl, obs, evid, evImg) {
+  return {
+    _id: ++rowSeq, sec: sec, tarea: tarea, regla: regla,
+    pond: pond, err: err, cumpl: cumpl, obs: obs || '', evid: evid || '', evImg: evImg || ''
+  };
+}
+
+/* ---------- Referencias DOM ---------- */
+let cmbDir, cmbArea, cmbSec, txtBuscar, gridBody, pnlCards;
+let txtNombreEvaluado, txtPuestoEvaluado, txtNombreEvaluador, txtPuestoEvaluador;
+
+/* =====================================================================
+   Almacén de imágenes de evidencia (IndexedDB)
+   ===================================================================== */
+const IMG = (function () {
+  let dbp = null;
+  const mem = new Map();
+  function abrir() {
+    if (dbp) return dbp;
+    dbp = new Promise(function (res, rej) {
+      try {
+        const rq = indexedDB.open('KPI_Evidencias', 1);
+        rq.onupgradeneeded = function () { rq.result.createObjectStore('img'); };
+        rq.onsuccess = function () { res(rq.result); };
+        rq.onerror = function () { rej(rq.error); };
+      } catch (e) { rej(e); }
+    });
+    return dbp;
+  }
+  async function put(id, data) {
+    mem.set(id, data);
+    try {
+      const d = await abrir();
+      await new Promise(function (res, rej) {
+        const tx = d.transaction('img', 'readwrite');
+        tx.objectStore('img').put(data, id);
+        tx.oncomplete = res; tx.onerror = function () { rej(tx.error); };
+      });
+    } catch (e) { /* queda en memoria durante la sesión */ }
+  }
+  async function get(id) {
+    if (mem.has(id)) return mem.get(id);
+    try {
+      const d = await abrir();
+      return await new Promise(function (res, rej) {
+        const rq = d.transaction('img').objectStore('img').get(id);
+        rq.onsuccess = function () { res(rq.result || null); };
+        rq.onerror = function () { rej(rq.error); };
+      });
+    } catch (e) { return null; }
+  }
+  return { put: put, get: get };
+})();
+
+function leerDataURL(file) {
+  return new Promise(function (res, rej) {
+    const r = new FileReader();
+    r.onload = function () { res(r.result); };
+    r.onerror = function () { rej(r.error); };
+    r.readAsDataURL(file);
+  });
+}
+function reducirImagen(dataUrl, max, calidad) {
+  return new Promise(function (res, rej) {
+    const img = new Image();
+    img.onload = function () {
+      const k = Math.min(1, max / Math.max(img.width, img.height));
+      const w = Math.round(img.width * k), h = Math.round(img.height * k);
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+      res(c.toDataURL('image/jpeg', calidad));
+    };
+    img.onerror = rej;
+    img.src = dataUrl;
+  });
+}
+async function prepararEvidencia(file) {
+  let data = await leerDataURL(file);
+  if (file.type.indexOf('image/') === 0 && file.type !== 'image/gif' && file.size > 1.5 * 1024 * 1024) {
+    try { data = await reducirImagen(data, 1600, 0.85); } catch (e) { /* se conserva el original */ }
+  }
+  return data;
+}
+
+/* =====================================================================
+   Diálogos (reemplazo de MessageBox y de los formularios modales)
+   ===================================================================== */
+function modal(build, opciones) {
+  const o = opciones || {};
+  return new Promise(function (resolve) {
+    const ov = document.createElement('div');
+    ov.className = 'overlay';
+    const box = document.createElement('div');
+    box.className = 'dlg';
+    box.style.width = (o.width || 460) + 'px';
+    ov.appendChild(box);
+    function cerrar(v) {
+      ov.remove();
+      document.removeEventListener('keydown', onKey, true);
+      resolve(v);
+    }
+    function onKey(e) {
+      if (e.key === 'Escape' && ov === $('#modalRoot').lastElementChild) {
+        e.stopPropagation();
+        cerrar(o.cancelValue);
+      }
+    }
+    document.addEventListener('keydown', onKey, true);
+    build(box, cerrar);
+    $('#modalRoot').appendChild(ov);
+    const f = box.querySelector('[autofocus]') || box.querySelector('input,button');
+    if (f) f.focus();
+  });
+}
+
+const ICONOS = { info: 'ℹ️', warn: '⚠️', error: '⛔', question: '❓' };
+
+function showMessage(texto, titulo, icono) {
+  return modal(function (box, cerrar) {
+    box.innerHTML =
+      '<div class="dlg-head"><span class="dlg-icon">' + (ICONOS[icono] || ICONOS.info) + '</span>' +
+      '<h3 class="dlg-title" style="margin:0">' + esc(titulo || '') + '</h3></div>' +
+      '<p class="dlg-text">' + esc(texto) + '</p>' +
+      '<div class="dlg-btns"><button class="btn blue" autofocus>Aceptar</button></div>';
+    box.querySelector('button').onclick = function () { cerrar(true); };
+  }, { width: 440, cancelValue: true });
+}
+
+function showConfirm(texto, titulo, icono) {
+  return modal(function (box, cerrar) {
+    box.innerHTML =
+      '<div class="dlg-head"><span class="dlg-icon">' + (ICONOS[icono] || ICONOS.question) + '</span>' +
+      '<h3 class="dlg-title" style="margin:0">' + esc(titulo || '') + '</h3></div>' +
+      '<p class="dlg-text">' + esc(texto) + '</p>' +
+      '<div class="dlg-btns"><button class="btn green" id="cfSi" autofocus>Sí</button>' +
+      '<button class="btn" id="cfNo">No</button></div>';
+    box.querySelector('#cfSi').onclick = function () { cerrar(true); };
+    box.querySelector('#cfNo').onclick = function () { cerrar(false); };
+  }, { width: 460, cancelValue: false });
+}
+
+function tryParseNum(texto) {
+  const s = String(texto == null ? '' : texto).replace('%', '').trim().replace(/,/g, '.');
+  if (s === '') return 0;
+  const v = Number(s);
+  return isFinite(v) ? v : 0;
+}
+
+/* FormDialogActividad */
+function dlgActividad(seccion, pTarea, pRegla, pPond, pErr, pCumpl, pObs, pEv, pEvImg) {
+  return modal(function (box, cerrar) {
+    box.innerHTML =
+      '<h3 class="dlg-title">Gestión de Actividad / Indicador</h3>' +
+      '<div class="dlg-sec">Subsección: ' + esc(seccion) + '</div>' +
+      '<div class="dlg-grid">' +
+      '<label>Tarea / Indicador:</label><input id="d_tarea" autofocus>' +
+      '<label>Fecha de Entrega / Regla:</label><input id="d_regla">' +
+      '<label>Ponderación (0.0 a 1.0):</label><input id="d_pond">' +
+      '<label>Errores (0.0 a 1.0):</label><input id="d_err">' +
+      '<label>Cumplimiento (0.0 a 1.0):</label><input id="d_cumpl">' +
+      '<label>Observaciones:</label><input id="d_obs">' +
+      '<label>Imagen de Evidencia:</label><div class="ev-row"><input id="d_ev"><button type="button" id="d_evbtn" title="Examinar…">...</button></div>' +
+      '</div>' +
+      '<div class="dlg-btns"><button class="btn green" id="d_ok">Guardar</button><button class="btn" id="d_cancel">Cancelar</button></div>';
+
+    const g = function (id) { return box.querySelector(id); };
+    g('#d_tarea').value = pTarea;
+    g('#d_regla').value = pRegla;
+    g('#d_pond').value = String(pPond);
+    g('#d_err').value = String(pErr);
+    g('#d_cumpl').value = String(pCumpl);
+    g('#d_obs').value = pObs;
+    g('#d_ev').value = pEv;
+
+    let pendiente = null; // {nombre, data}
+
+    g('#d_evbtn').onclick = async function () {
+      const f = await pickFile('image/*');
+      if (!f) return;
+      try {
+        const data = await prepararEvidencia(f);
+        pendiente = { nombre: f.name, data: data };
+        g('#d_ev').value = f.name;
+      } catch (ex) {
+        showMessage('No se pudo leer la imagen: ' + ex.message, 'Error', 'error');
+      }
+    };
+    g('#d_cancel').onclick = function () { cerrar(null); };
+    g('#d_ok').onclick = async function () {
+      const evTxt = g('#d_ev').value.trim();
+      let evImg = '';
+      if (pendiente && evTxt === pendiente.nombre) {
+        evImg = nuevoId();
+        await IMG.put(evImg, pendiente.data);
+      } else if (evTxt === String(pEv).trim()) {
+        evImg = pEvImg || '';
+      }
+      cerrar({
+        tarea: g('#d_tarea').value.trim(),
+        regla: g('#d_regla').value.trim(),
+        pond: tryParseNum(g('#d_pond').value),
+        err: tryParseNum(g('#d_err').value),
+        cumpl: tryParseNum(g('#d_cumpl').value),
+        obs: g('#d_obs').value.trim(),
+        evid: evTxt,
+        evImg: evImg
+      });
+    };
+  }, { width: 480, cancelValue: null });
+}
+
+/* FormDialogSeccion */
+function dlgSeccion(area, maxDisponible) {
+  return modal(function (box, cerrar) {
+    box.innerHTML =
+      '<h3 class="dlg-title">Nueva Sección / Subsección Manual</h3>' +
+      '<div class="dlg-sec">Área: ' + esc(area) + '</div>' +
+      '<div class="dlg-grid">' +
+      '<label>Nombre de la sección:</label><input id="s_nombre" autofocus>' +
+      '<label>Ponderación (%):</label><div style="display:flex;gap:12px;align-items:center"><input id="s_pond" style="width:80px" value="10">' +
+      '<span class="dlg-max">Máximo disponible: ' + fmt1(maxDisponible * 100) + '%</span></div>' +
+      '</div>' +
+      '<p class="dlg-note">Las demás subsecciones del área se reajustan proporcionalmente para que el total siga siendo 100%. ' +
+      'En el siguiente paso capturarás la primera actividad de esta sección.</p>' +
+      '<div class="dlg-btns"><button class="btn green" id="s_ok">Continuar</button><button class="btn" id="s_cancel">Cancelar</button></div>';
+
+    box.querySelector('#s_cancel').onclick = function () { cerrar(null); };
+    box.querySelector('#s_ok').onclick = async function () {
+      let nombre = box.querySelector('#s_nombre').value.trim().toUpperCase();
+      nombre = nombre.replace(/=/g, '-').replace(/\|/g, '-').replace(/~/g, '-').replace(/\r/g, ' ').replace(/\n/g, ' ');
+      nombre = nombre.replace(/^[- ]+/, '');
+
+      if (nombre.length === 0) {
+        await showMessage('Escribe el nombre de la sección.', 'Atención', 'warn');
+        return;
+      }
+      const textoPond = box.querySelector('#s_pond').value.replace('%', '').replace(/,/g, '.').trim();
+      const pct = Number(textoPond);
+      if (textoPond === '' || !isFinite(pct)) {
+        await showMessage('La ponderación debe ser un número (por ejemplo 10 para 10%).', 'Atención', 'warn');
+        return;
+      }
+      if (pct < 1 || pct > maxDisponible * 100 + 0.0001) {
+        await showMessage('La ponderación debe estar entre 1% y ' + fmt1(maxDisponible * 100) + '%.', 'Atención', 'warn');
+        return;
+      }
+      cerrar({ nombre: nombre, pond: pct / 100 });
+    };
+  }, { width: 500, cancelValue: null });
+}
+
+async function verEvidencia(data, nombre) {
+  if (data.indexOf('data:image/') === 0) {
+    await modal(function (box, cerrar) {
+      box.className = 'dlg viewer';
+      box.style.width = 'auto';
+      box.innerHTML = '<img alt="Evidencia"><div class="dlg-btns" style="justify-content:center;margin-top:0">' +
+        '<button class="btn blue" id="v_tab">Abrir en pestaña nueva</button><button class="btn" id="v_close" autofocus>Cerrar</button></div>';
+      box.querySelector('img').src = data;
+      box.querySelector('img').title = nombre;
+      box.querySelector('#v_close').onclick = function () { cerrar(true); };
+      box.querySelector('#v_tab').onclick = function () { abrirDataURL(data); };
+    }, { cancelValue: true });
+  } else {
+    abrirDataURL(data);
+  }
+}
+function abrirDataURL(data) {
+  const partes = data.split(',');
+  const mime = (partes[0].match(/:(.*?);/) || [])[1] || 'application/octet-stream';
+  const bin = atob(partes[1] || '');
+  const arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  window.open(URL.createObjectURL(new Blob([arr], { type: mime })), '_blank');
+}
+
+/* =====================================================================
+   Persistencia instantánea (KPI_Database_Master)
+   ===================================================================== */
+function cargarBaseDeDatosGeneral() {
+  db = {};
+  try {
+    const raw = localStorage.getItem(DB_KEY);
+    if (raw) db = JSON.parse(raw) || {};
+  } catch (e) { db = {}; }
+}
+
+function guardarCambiosInstantaneos() {
+  if (isLoadingData) return;
+  try {
+    const areaActual = cmbArea.value ? areaKey() : 'GENERAL';
+
+    db[areaActual + '_Evaluado'] = txtNombreEvaluado.value;
+    db[areaActual + '_PuestoEvaluado'] = txtPuestoEvaluado.value;
+    db[areaActual + '_Evaluador'] = txtNombreEvaluador.value;
+    db[areaActual + '_PuestoEvaluador'] = txtPuestoEvaluador.value;
+
+    rows.forEach(function (row) {
+      const keyBase = areaActual + '|' + row.sec + '|' + row.tarea;
+      db[keyBase + '|Errores'] = String(row.err);
+      db[keyBase + '|Cumplimiento'] = String(row.cumpl);
+      db[keyBase + '|Observaciones'] = String(row.obs);
+      db[keyBase + '|Evidencia'] = String(row.evid);
+      db[keyBase + '|EvidenciaImg'] = String(row.evImg || '');
+    });
+
+    guardarActividadesExtra(areaActual);
+    localStorage.setItem(DB_KEY, JSON.stringify(db));
+  } catch (e) { /* igual que el original: se ignora */ }
+}
+
+function aplicarCalificacionesGuardadas() {
+  isLoadingData = true;
+  try {
+    const areaActual = cmbArea.value ? areaKey() : '';
+    const setTxt = function (inp, key) { inp.value = Object.prototype.hasOwnProperty.call(db, key) ? db[key] : ''; };
+    setTxt(txtNombreEvaluado, areaActual + '_Evaluado');
+    setTxt(txtPuestoEvaluado, areaActual + '_PuestoEvaluado');
+    setTxt(txtNombreEvaluador, areaActual + '_Evaluador');
+    setTxt(txtPuestoEvaluador, areaActual + '_PuestoEvaluador');
+
+    rows.forEach(function (row) {
+      const k = areaActual + '|' + row.sec + '|' + row.tarea;
+      const has = function (s) { return Object.prototype.hasOwnProperty.call(db, k + s); };
+      if (has('|Errores')) { const v = parseFloat(db[k + '|Errores']); if (isFinite(v)) row.err = v; }
+      if (has('|Cumplimiento')) { const v = parseFloat(db[k + '|Cumplimiento']); if (isFinite(v)) row.cumpl = v; }
+      if (has('|Observaciones')) row.obs = db[k + '|Observaciones'];
+      if (has('|Evidencia')) row.evid = db[k + '|Evidencia'];
+      if (has('|EvidenciaImg')) row.evImg = db[k + '|EvidenciaImg'];
+    });
+  } finally {
+    isLoadingData = false;
+  }
+}
+
+/* ---------- Secciones manuales (persistencia) ---------- */
+function limpiarTextoPersistencia(s) {
+  if (s == null) return '';
+  return String(s).replace(/=/g, '-').replace(/~/g, '-').replace(/\r/g, ' ').replace(/\n/g, ' ').trim();
+}
+
+function leerSeccionesExtra(area) {
+  const res = [];
+  let n = parseInt(db[area + '_SecExtra_Count'], 10);
+  if (!isFinite(n)) n = 0;
+  for (let i = 0; i < n; i++) {
+    const v = db[area + '_SecExtra_' + i];
+    if (v !== undefined) {
+      const p = String(v).split('~');
+      if (p.length >= 2) {
+        const pond = parseFloat(p[1]);
+        if (p[0].trim().length > 0 && pond > 0) res.push([p[0].trim(), pond]);
+      }
+    }
+  }
+  return res;
+}
+
+function escribirSeccionesExtra(area, lista) {
+  Object.keys(db).forEach(function (k) { if (k.indexOf(area + '_SecExtra_') === 0) delete db[k]; });
+  db[area + '_SecExtra_Count'] = String(lista.length);
+  lista.forEach(function (x, i) { db[area + '_SecExtra_' + i] = x[0] + '~' + fmt4(x[1]); });
+}
+
+function borrarCalificacionesSeccion(area, nombreSeccion) {
+  const prefijo = area + '|' + nombreSeccion + '|';
+  Object.keys(db).forEach(function (k) { if (k.indexOf(prefijo) === 0) delete db[k]; });
+}
+
+function guardarActividadesExtra(area) {
+  Object.keys(db).forEach(function (k) { if (k.indexOf(area + '_ActExtra_') === 0) delete db[k]; });
+  if (seccionesExtra.size === 0) return;
+  let j = 0;
+  rows.forEach(function (row) {
+    if (seccionesExtra.has(row.sec)) {
+      const pond = isFinite(row.pond) ? row.pond : 0;
+      db[area + '_ActExtra_' + j] = [row.sec, limpiarTextoPersistencia(row.tarea), limpiarTextoPersistencia(row.regla), fmt4(pond)].join('~');
+      j++;
+    }
+  });
+}
+
+function cargarActividadesExtraGuardadas(area) {
+  let j = 0;
+  while (Object.prototype.hasOwnProperty.call(db, area + '_ActExtra_' + j)) {
+    const p = String(db[area + '_ActExtra_' + j]).split('~');
+    if (p.length >= 4 && seccionesExtra.has(p[0])) {
+      let pond = parseFloat(p[3]);
+      if (!isFinite(pond)) pond = 0.1;
+      rows.push(crearFila(p[0], p[1], p[2], pond, 0.0, 1.0, '', ''));
+    }
+    j++;
+  }
+}
+
+function aplicarSeccionesExtraDelArea(area, desdeArchivo) {
+  seccionesExtra.clear();
+  leerSeccionesExtra(area).forEach(function (def) {
+    const existe = secciones.some(function (s) { return s.nombre.toLowerCase() === def[0].toLowerCase(); });
+    if (!existe) {
+      secciones.push({ nombre: def[0], pond: def[1], valor: 0 });
+      seccionesExtra.add(def[0]);
+    }
+  });
+  if (seccionesExtra.size === 0) return;
+  reajustarPonderacionesSecciones();
+  if (!desdeArchivo) cargarActividadesExtraGuardadas(area);
+}
+
+// Las secciones manuales conservan el % asignado; las originales se reparten el resto proporcionalmente.
+function reajustarPonderacionesSecciones() {
+  let sumaExtra = 0, sumaBase = 0;
+  secciones.forEach(function (s) {
+    if (seccionesExtra.has(s.nombre)) sumaExtra += s.pond; else sumaBase += s.pond;
+  });
+  if (sumaBase <= 0) return;
+  const factor = Math.max(0, 1 - sumaExtra) / sumaBase;
+  secciones.forEach(function (s) { if (!seccionesExtra.has(s.nombre)) s.pond = s.pond * factor; });
+}
+
+/* =====================================================================
+   Cambio de área (cmbAreaEvaluada_SelectedIndexChanged)
+   ===================================================================== */
+function setupArea(area, desdeArchivo) {
+  const def = defArea(dirActual, area);
+
+  secciones = def.secciones.map(function (s) { return { nombre: s[0], pond: s[1], valor: 0 }; });
+  rows = [];
+  if (!desdeArchivo) {
+    def.filas.forEach(function (f) {
+      rows.push(crearFila(def.secciones[f[0]][0], f[1], f[2], f[3], f[4], f[5], f[6], ''));
+    });
+  }
+
+  aplicarSeccionesExtraDelArea(areaKeyOf(dirActual, area), desdeArchivo);
+  reconstruirCardsUI();
+  llenarComboSecciones();
+  if (!desdeArchivo) aplicarCalificacionesGuardadas();
+  calcularKPIsGlobales();
+  aplicarFiltrosGrid();
+}
+
+function llenarComboSecciones(seleccionar) {
+  cmbSec.innerHTML = '';
+  const add = function (t) { const o = document.createElement('option'); o.value = t; o.textContent = t; cmbSec.appendChild(o); };
+  add('-- Selecciona una Subsección --');
+  secciones.forEach(function (s) { add(s.nombre); });
+  if (seleccionar && secciones.some(function (s) { return s.nombre === seleccionar; })) cmbSec.value = seleccionar;
+  else cmbSec.selectedIndex = 0;
+}
+
+/* =====================================================================
+   Tarjetas superiores
+   ===================================================================== */
+function reconstruirCardsUI() {
+  pnlCards.innerHTML = '';
+  secciones.forEach(function (s, i) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = '<div class="card-title">' + esc(s.nombre) + '<br>(' + pct0(s.pond) + ')</div>' +
+      '<div class="card-val" id="lblValSec_' + i + '">0.0%</div>';
+    pnlCards.appendChild(card);
+  });
+  const g = document.createElement('div');
+  g.className = 'card';
+  g.innerHTML = '<div class="card-title blue">CUMPLIMIENTO<br>GLOBAL</div><div class="card-val global" id="lblValGlobal">0.0%</div><div class="card-sub" id="lblPeso"></div>';
+  pnlCards.appendChild(g);
+}
+
+/* =====================================================================
+   Cálculo (CalcularKPIsGlobales)
+   ===================================================================== */
+function calcularKPIsGlobales() {
+  if (secciones.length === 0) {
+    valGlobal = 0;
+    const l0 = $('#lblValGlobal');
+    if (l0) { l0.textContent = '0.0%'; l0.style.color = COL.red; }
+    const pw0 = $('#lblPeso');
+    if (pw0) pw0.textContent = '';
+    renderGrid();
+    const a0 = $('#pnlAnalyticsContainer'); if (a0) a0.innerHTML = '';
+    const c0 = $('#pnlCronogramaContainer'); if (c0) c0.innerHTML = '';
+    return;
+  }
+  valGlobal = 0;
+
+  secciones.forEach(function (sec, i) {
+    let suma = 0;
+    rows.forEach(function (row) {
+      if (row.sec === sec.nombre) {
+        const peso = num(row.pond, 0);
+        const errores = num(row.err, 0);
+        let cumpl = num(row.cumpl, 1);
+        if (errores > 0) {
+          cumpl = Math.max(0, 1 - errores);
+          row.cumpl = cumpl;
+        }
+        suma += cumpl * peso;
+      }
+    });
+    sec.valor = suma;
+    valGlobal += sec.valor * sec.pond;
+    const lbl = $('#lblValSec_' + i);
+    if (lbl) lbl.textContent = pct1(sec.valor);
+  });
+
+  // En áreas creadas a mano (sin secciones originales) el global se normaliza al peso asignado
+  const hayBase = secciones.some(function (x) { return !seccionesExtra.has(x.nombre); });
+  const sumaPond = secciones.reduce(function (a, x) { return a + x.pond; }, 0);
+  if (!hayBase && sumaPond > 0) valGlobal = valGlobal / sumaPond;
+  const pw = $('#lblPeso');
+  if (pw) pw.textContent = (!hayBase && Math.abs(sumaPond - 1) > 0.0001) ? 'Peso asignado: ' + pct0(sumaPond) : '';
+
+  const lg = $('#lblValGlobal');
+  lg.textContent = pct1(valGlobal);
+  lg.style.color = valGlobal >= 0.9 ? COL.green : (valGlobal >= 0.7 ? COL.orange : COL.red);
+
+  renderGrid();
+  generarGraficosAnaliticos();
+  generarVistaCronogramaVisual();
+}
+
+/* =====================================================================
+   Grid (DataGridView)
+   ===================================================================== */
+function filasVisibles() {
+  if (cmbSec.selectedIndex <= 0 || cmbSec.value.indexOf('--') === 0) return [];
+  const sel = cmbSec.value;
+  const q = txtBuscar.value.trim().toLowerCase();
+  return rows.filter(function (r) {
+    return r.sec === sel && (q === '' || String(r.tarea).toLowerCase().indexOf(q) >= 0);
+  });
+}
+
+function aplicarFiltrosGrid() { renderGrid(); }
+
+function claseCumpl(v) { return v >= 0.9 ? 'ok' : (v >= 0.7 ? 'warn' : 'bad'); }
+
+function renderGrid() {
+  if (!gridBody) return;
+  const vis = filasVisibles();
+  if (vis.indexOf(selectedRow) < 0) selectedRow = vis.length ? vis[0] : null;
+
+  if (vis.length === 0) {
+    const msg = secciones.length === 0
+      ? (cmbArea.value ? 'Esta área aún no tiene secciones. Usa «Nueva Sección» para crear la primera y capturar sus actividades.'
+                       : 'Esta dirección aún no tiene áreas. Usa «Nueva Área» para crear la primera.')
+      : (cmbSec.selectedIndex <= 0)
+        ? 'Selecciona una subsección para ver sus actividades.'
+        : 'No hay actividades que coincidan con la búsqueda.';
+    gridBody.innerHTML = '<tr><td colspan="8" class="empty-msg">' + msg + '</td></tr>';
+    return;
+  }
+
+  gridBody.innerHTML = vis.map(function (r) {
+    const cv = num(r.cumpl, 1);
+    const evTxt = String(r.evid || '').trim();
+    const evCell = evTxt
+      ? '<a class="ev-link" title="Doble clic para abrir">' + esc(evTxt) + '</a>'
+      : '<span class="ev-empty">📷 Doble clic para adjuntar foto...</span>';
+    return '<tr data-id="' + r._id + '" class="' + claseCumpl(cv) + (r === selectedRow ? ' sel' : '') + '">' +
+      '<td>' + esc(r.sec) + '</td>' +
+      '<td>' + esc(r.tarea) + '</td>' +
+      '<td class="ed c-regla" data-col="regla">' + esc(r.regla) + '</td>' +
+      '<td class="num">' + pct1(num(r.pond, 0)) + '</td>' +
+      '<td class="ed ctr' + (num(r.err, 0) > 0 ? ' neg' : '') + '" data-col="err">' + pct1(num(r.err, 0)) + '</td>' +
+      '<td class="ed num cumpl-' + claseCumpl(cv) + '" data-col="cumpl">' + pct1(cv) + '</td>' +
+      '<td class="ed" data-col="obs">' + esc(r.obs) + '</td>' +
+      '<td class="ed" data-col="ev">' + evCell + '<button class="ev-edit" title="Editar ruta / URL de la evidencia">✎</button></td>' +
+      '</tr>';
+  }).join('');
+}
+
+function filaPorTr(tr) {
+  const id = Number(tr.dataset.id);
+  return rows.find(function (r) { return r._id === id; });
+}
+
+/* Edición en línea de celdas */
+function iniciarEdicion(td, row, col) {
+  if (td.querySelector('input.inline')) return;
+  let valor;
+  if (col === 'err' || col === 'cumpl') valor = pct1(num(row[col], 0));
+  else if (col === 'ev') valor = row.evid;
+  else valor = row[col];
+
+  const inp = document.createElement('input');
+  inp.className = 'inline';
+  inp.value = valor;
+  td.innerHTML = '';
+  td.appendChild(inp);
+  inp.focus();
+  inp.select();
+
+  let terminado = false;
+  const terminar = function (guardar) {
+    if (terminado) return;
+    terminado = true;
+    if (guardar) confirmarEdicion(row, col, inp.value);
+    else renderGrid();
+  };
+  inp.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); terminar(true); }
+    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); terminar(false); }
+  });
+  inp.addEventListener('blur', function () { terminar(true); });
+}
+
+function confirmarEdicion(row, col, raw) {
+  if (col === 'regla') row.regla = raw;
+  else if (col === 'obs') row.obs = raw;
+  else if (col === 'err' || col === 'cumpl') {
+    // dgvKPIs_CellParsing / CellEndEdit
+    const s = String(raw).replace(/%/g, '').replace(/ /g, '').replace(/,/g, '.').trim();
+    const v = Number(s);
+    if (s !== '' && isFinite(v)) row[col] = clamp01(v > 1 ? v / 100 : v);
+  } else if (col === 'ev') {
+    const t = String(raw).trim();
+    if (t !== String(row.evid).trim()) { row.evid = t; row.evImg = ''; }
+  }
+  calcularKPIsGlobales();
+  guardarCambiosInstantaneos();
+}
+
+/* Evidencia fotográfica */
+async function adjuntarImagenEvidencia(row) {
+  const f = await pickFile('image/*');
+  if (!f) return;
+  try {
+    const data = await prepararEvidencia(f);
+    const id = nuevoId();
+    await IMG.put(id, data);
+    row.evid = f.name;
+    row.evImg = id;
+    calcularKPIsGlobales();
+    guardarCambiosInstantaneos();
+    await showMessage('Evidencia fotográfica adjuntada correctamente.', 'Éxito', 'info');
+  } catch (ex) {
+    await showMessage('Error al adjuntar la evidencia: ' + ex.message, 'Error', 'error');
+  }
+}
+
+async function abrirImagenEvidencia(row) {
+  const ruta = String(row.evid).trim();
+  try {
+    if (row.evImg) {
+      const data = await IMG.get(row.evImg);
+      if (data) { await verEvidencia(data, ruta); return; }
+    }
+    if (/^https?:\/\//.test(ruta)) {
+      window.open(ruta, '_blank', 'noopener');
+      return;
+    }
+    const si = await showConfirm('No se encontró la imagen en la ruta:\n' + ruta + '\n\n¿Desea seleccionar una nueva fotografía de evidencia?', 'Imagen no encontrada', 'question');
+    if (si) await adjuntarImagenEvidencia(row);
+  } catch (ex) {
+    await showMessage('Error al abrir la imagen de evidencia: ' + ex.message, 'Error', 'error');
+  }
+}
+
+function conectarGrid() {
+  gridBody.addEventListener('click', function (e) {
+    const tr = e.target.closest('tr[data-id]');
+    if (!tr) return;
+    const row = filaPorTr(tr);
+    if (!row) return;
+
+    if (e.target.closest('.ev-edit')) {
+      selectedRow = row;
+      iniciarEdicion(tr.querySelector('[data-col="ev"]'), row, 'ev');
+      return;
+    }
+    if (row !== selectedRow) {
+      selectedRow = row;
+      gridBody.querySelectorAll('tr.sel').forEach(function (t) { t.classList.remove('sel'); });
+      tr.classList.add('sel');
+    }
+  });
+
+  gridBody.addEventListener('dblclick', function (e) {
+    const td = e.target.closest('td.ed');
+    const tr = e.target.closest('tr[data-id]');
+    if (!td || !tr || e.target.closest('input')) return;
+    const row = filaPorTr(tr);
+    if (!row) return;
+    const col = td.dataset.col;
+    if (col === 'ev') {
+      if (String(row.evid).trim() === '') adjuntarImagenEvidencia(row);
+      else abrirImagenEvidencia(row);
+    } else {
+      iniciarEdicion(td, row, col);
+    }
+  });
+
+  // Navegación con flechas entre filas
+  $('#dgvKPIs').addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT') return;
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    const vis = filasVisibles();
+    const i = vis.indexOf(selectedRow);
+    const n = e.key === 'ArrowDown' ? Math.min(vis.length - 1, i + 1) : Math.max(0, i - 1);
+    if (vis[n]) { selectedRow = vis[n]; renderGrid(); }
+    e.preventDefault();
+  });
+  $('#dgvKPIs').tabIndex = 0;
+}
+
+/* =====================================================================
+   Botones CRUD
+   ===================================================================== */
+async function btnAgregarActividad_Click() {
+  if (cmbSec.selectedIndex <= 0 || cmbSec.value.indexOf('--') === 0) {
+    await showMessage('Por favor, selecciona una subsección válida antes de agregar una actividad.', 'Atención', 'warn');
+    return;
+  }
+  const secNombre = cmbSec.value;
+  const r = await dlgActividad(secNombre, '', '', 0.1, 0, 1.0, '', '', '');
+  if (r) {
+    rows.push(crearFila(secNombre, r.tarea, r.regla, r.pond, r.err, r.cumpl, r.obs, r.evid, r.evImg));
+    calcularKPIsGlobales();
+    guardarCambiosInstantaneos();
+  }
+}
+
+async function btnModificarActividad_Click() {
+  if (!selectedRow) {
+    await showMessage('Selecciona una fila para modificar.', 'Atención', 'info');
+    return;
+  }
+  const dr = selectedRow;
+  const r = await dlgActividad(dr.sec, dr.tarea, dr.regla, num(dr.pond, 0), num(dr.err, 0), num(dr.cumpl, 1), dr.obs, dr.evid, dr.evImg);
+  if (r) {
+    dr.tarea = r.tarea; dr.regla = r.regla; dr.pond = r.pond; dr.err = r.err;
+    dr.cumpl = r.cumpl; dr.obs = r.obs; dr.evid = r.evid; dr.evImg = r.evImg;
+    calcularKPIsGlobales();
+    guardarCambiosInstantaneos();
+  }
+}
+
+async function btnEliminarActividad_Click() {
+  if (!selectedRow) {
+    await showMessage('Selecciona una fila para eliminar.', 'Atención', 'info');
+    return;
+  }
+  if (await showConfirm('¿Está seguro de eliminar la actividad seleccionada?', 'Confirmación', 'question')) {
+    const idx = rows.indexOf(selectedRow);
+    if (idx >= 0) rows.splice(idx, 1);
+    selectedRow = null;
+    calcularKPIsGlobales();
+    guardarCambiosInstantaneos();
+  }
+}
+
+/* =====================================================================
+   Secciones manuales
+   ===================================================================== */
+function refrescarUISecciones(seleccionar) {
+  reajustarPonderacionesSecciones();
+  reconstruirCardsUI();
+  llenarComboSecciones(seleccionar);
+  calcularKPIsGlobales();
+  aplicarFiltrosGrid();
+}
+
+async function btnAgregarSeccion_Click() {
+  if (!cmbArea.value) return;
+  const area = areaKey();
+
+  const extras = leerSeccionesExtra(area);
+  let sumaExtra = 0;
+  extras.forEach(function (x) { sumaExtra += x[1]; });
+
+  const lim = limiteSecciones();
+  const disponible = lim - sumaExtra;
+  if (disponible < 0.01) {
+    await showMessage('Las secciones manuales de esta área ya usan el ' + Math.round(lim * 100) + '% de la ponderación. Quita alguna antes de agregar otra.', 'Atención', 'warn');
+    return;
+  }
+
+  const def = await dlgSeccion(areaLabel(), disponible);
+  if (!def) return;
+  const nombre = def.nombre;
+  const pond = def.pond;
+
+  if (secciones.some(function (s) { return s.nombre.toLowerCase() === nombre.toLowerCase(); })) {
+    await showMessage('Ya existe una subsección con ese nombre en esta área.', 'Atención', 'warn');
+    return;
+  }
+
+  // Una sección sin actividades daría 0% y bajaría el global: se captura la primera actividad de inmediato
+  const act = await dlgActividad(nombre, '', '', 1.0, 0, 1.0, '', '', '');
+  if (!act) {
+    await showMessage('La sección no se creó: necesita al menos una actividad.', 'Atención', 'info');
+    return;
+  }
+
+  guardarCambiosInstantaneos();
+
+  secciones.push({ nombre: nombre, pond: pond, valor: 0 });
+  seccionesExtra.add(nombre);
+  extras.push([nombre, pond]);
+  escribirSeccionesExtra(area, extras);
+
+  rows.push(crearFila(nombre, act.tarea, act.regla, act.pond, act.err, act.cumpl, act.obs, act.evid, act.evImg));
+
+  refrescarUISecciones(nombre);
+  guardarCambiosInstantaneos();
+}
+
+async function btnEliminarSeccion_Click() {
+  if (!cmbArea.value) return;
+  const area = areaKey();
+  const nombre = cmbSec.value;
+
+  if (cmbSec.selectedIndex <= 0 || !seccionesExtra.has(nombre)) {
+    await showMessage('Selecciona en SUBSECCIÓN una sección agregada manualmente. Las secciones originales del área no se pueden quitar.', 'Atención', 'info');
+    return;
+  }
+
+  const cantAct = rows.filter(function (r) { return r.sec === nombre; }).length;
+  if (!(await showConfirm("¿Quitar la sección '" + nombre + "' y sus " + cantAct + ' actividad(es)?', 'Confirmación', 'question'))) return;
+
+  rows = rows.filter(function (r) { return r.sec !== nombre; });
+  secciones = secciones.filter(function (s) { return s.nombre !== nombre; });
+  seccionesExtra.delete(nombre);
+
+  const extras = leerSeccionesExtra(area).filter(function (x) { return x[0] !== nombre; });
+  escribirSeccionesExtra(area, extras);
+  borrarCalificacionesSeccion(area, nombre);
+
+  refrescarUISecciones();
+  guardarCambiosInstantaneos();
+}
+
+function aplicarSeccionesExtraDeArchivo() {
+  if (extrasPendientesArchivo.length === 0) return;
+  if (!cmbArea.value) return;
+
+  const area = areaKey();
+  const extras = leerSeccionesExtra(area);
+  let huboCambios = false;
+
+  extrasPendientesArchivo.forEach(function (def) {
+    const p = def.split('~');
+    if (p.length < 2) return;
+    const nombre = p[0].trim();
+    const pond = parseFloat(p[1]);
+    if (nombre.length === 0 || !(pond > 0)) return;
+    if (secciones.some(function (s) { return s.nombre.toLowerCase() === nombre.toLowerCase(); })) return;
+
+    secciones.push({ nombre: nombre, pond: pond, valor: 0 });
+    seccionesExtra.add(nombre);
+    extras.push([nombre, pond]);
+    huboCambios = true;
+  });
+
+  extrasPendientesArchivo = [];
+
+  if (huboCambios) {
+    escribirSeccionesExtra(area, extras);
+    refrescarUISecciones();
+  }
+}
+
+/* =====================================================================
+   Botones del encabezado
+   ===================================================================== */
+async function btnCalcular_Click() {
+  calcularKPIsGlobales();
+  guardarCambiosInstantaneos();
+  await showMessage('Métricas recalculadas y guardadas.', 'KPI Suite', 'info');
+}
+
+function limpiarInput(inp) {
+  // Igual que TextBox.Clear(): dispara el guardado solo si el texto cambia
+  if (inp.value !== '') { inp.value = ''; guardarCambiosInstantaneos(); }
+}
+
+async function btnLimpiarCampos_Click() {
+  limpiarInput(txtNombreEvaluado);
+  limpiarInput(txtPuestoEvaluado);
+  limpiarInput(txtNombreEvaluador);
+  limpiarInput(txtPuestoEvaluador);
+  txtBuscar.value = '';
+
+  rows.forEach(function (row) {
+    row.err = 0.0;
+    row.cumpl = 1.0;
+    row.obs = '';
+    row.evid = '';
+    row.evImg = '';
+  });
+
+  calcularKPIsGlobales();
+  guardarCambiosInstantaneos();
+  await showMessage('Se han limpiado los campos de texto y restablecido los valores de evaluación.', 'Limpieza Completada', 'info');
+}
+
+async function btnReiniciarArea_Click() {
+  if (await showConfirm('¿Desea reiniciar completamente el área actual a sus valores originales?', 'Confirmar Reinicio de Área', 'question')) {
+    limpiarInput(txtNombreEvaluado);
+    limpiarInput(txtPuestoEvaluado);
+    limpiarInput(txtNombreEvaluador);
+    limpiarInput(txtPuestoEvaluador);
+    txtBuscar.value = '';
+
+    if (cmbArea.value) setupArea(cmbArea.value, false);
+
+    guardarCambiosInstantaneos();
+    await showMessage('Área reiniciada correctamente a sus valores originales.', 'Sistema KPI', 'info');
+  }
+}
+
+/* ---------- Guardar / Cargar archivo .kpi ---------- */
+function limpiarCampoArchivo(v) { return String(v == null ? '' : v).replace(/\|/g, '/').replace(/[\r\n]+/g, ' '); }
+
+async function btnGuardarLocal_Click() {
+  const nombre = txtNombreEvaluado.value.trim().replace(/ /g, '_');
+  const fname = 'Evaluacion_' + nombre + '_' + stamp(false) + '.kpi';
+  try {
+    const L = [];
+    L.push('[EVALUACION_HEADER]');
+    L.push('Direccion=' + dirActual);
+    L.push('Area=' + cmbArea.value);
+    L.push('Evaluado=' + limpiarCampoArchivo(txtNombreEvaluado.value));
+    L.push('PuestoEvaluado=' + limpiarCampoArchivo(txtPuestoEvaluado.value));
+    L.push('Evaluador=' + limpiarCampoArchivo(txtNombreEvaluador.value));
+    L.push('PuestoEvaluador=' + limpiarCampoArchivo(txtPuestoEvaluador.value));
+    L.push('Global=' + valGlobal);
+    secciones.forEach(function (s) {
+      if (seccionesExtra.has(s.nombre)) L.push('SeccionExtra=' + s.nombre + '~' + fmt4(s.pond));
+    });
+
+    L.push('[KPI_ROWS]');
+    const ids = [];
+    rows.forEach(function (r) {
+      L.push([r.sec, r.tarea, r.regla, r.pond, r.err, r.cumpl, r.obs, r.evid, r.evImg || ''].map(limpiarCampoArchivo).join('|'));
+      if (r.evImg && ids.indexOf(r.evImg) < 0) ids.push(r.evImg);
+    });
+
+    // Las imágenes adjuntas viajan dentro del archivo para poder abrirlas en otro equipo
+    const bloques = [];
+    for (const id of ids) {
+      const data = await IMG.get(id);
+      if (data) bloques.push(id + '=' + data);
+    }
+    if (bloques.length) { L.push('[EVIDENCIAS]'); bloques.forEach(function (b) { L.push(b); }); }
+
+    descargar(fname, L.join('\r\n') + '\r\n', 'text/plain;charset=utf-8');
+    await showMessage('Evaluación guardada localmente de forma exitosa.', 'Éxito', 'info');
+  } catch (ex) {
+    await showMessage('Error al guardar el archivo: ' + ex.message, 'Error', 'error');
+  }
+}
+
+function aNumeroEstricto(s) {
+  const v = Number(String(s).trim().replace(/,/g, '.'));
+  if (String(s).trim() === '' || !isFinite(v)) throw new Error('La cadena de entrada no tiene el formato correcto.');
+  return v;
+}
+
+async function btnCargarLocal_Click() {
+  const f = await pickFile('.kpi,.txt');
+  if (!f) return;
+  try {
+    const texto = await f.text();
+    const lineas = texto.split(/\r?\n/);
+    const cab = {};
+    const extras = [];
+    const nuevas = [];
+    const evids = {};
+    let modo = 'cab';
+
+    lineas.forEach(function (line) {
+      if (line.trim() === '') return;
+      if (line === '[KPI_ROWS]') { modo = 'rows'; return; }
+      if (line === '[EVIDENCIAS]') { modo = 'evid'; return; }
+      if (line === '[EVALUACION_HEADER]') return;
+
+      if (modo === 'cab') {
+        const i = line.indexOf('=');
+        if (i < 0) return;
+        const k = line.slice(0, i), v = line.slice(i + 1);
+        if (k === 'SeccionExtra') extras.push(v); else cab[k] = v;
+      } else if (modo === 'rows') {
+        const c = line.split('|');
+        if (c.length >= 7) {
+          nuevas.push(crearFila(c[0], c[1], c[2], aNumeroEstricto(c[3]), aNumeroEstricto(c[4]), aNumeroEstricto(c[5]), c[6],
+            c.length >= 8 ? c[7] : '', c.length >= 9 ? c[8] : ''));
+        }
+      } else if (modo === 'evid') {
+        const i = line.indexOf('=');
+        if (i > 0) evids[line.slice(0, i)] = line.slice(i + 1);
+      }
+    });
+
+    for (const id of Object.keys(evids)) await IMG.put(id, evids[id]);
+
+    extrasPendientesArchivo = extras;
+
+    if (cab.Direccion && listaDirecciones().indexOf(cab.Direccion) >= 0 && cab.Direccion !== dirActual) {
+      dirActual = cab.Direccion;
+      llenarDirecciones();
+      llenarAreas();
+    }
+    if (cab.Area && areasDeDireccion(dirActual).indexOf(cab.Area) >= 0) cmbArea.value = cab.Area;
+    if (!cmbArea.value) throw new Error('Esta dirección no tiene áreas donde cargar la evaluación.');
+    // Prepara secciones del área sin cargar filas por defecto (evita duplicados)
+    setupArea(cmbArea.value, true);
+
+    isLoadingData = true;
+    if (cab.Evaluado !== undefined) txtNombreEvaluado.value = cab.Evaluado;
+    if (cab.PuestoEvaluado !== undefined) txtPuestoEvaluado.value = cab.PuestoEvaluado;
+    if (cab.Evaluador !== undefined) txtNombreEvaluador.value = cab.Evaluador;
+    if (cab.PuestoEvaluador !== undefined) txtPuestoEvaluador.value = cab.PuestoEvaluador;
+    isLoadingData = false;
+
+    rows = nuevas;
+    selectedRow = null;
+
+    aplicarSeccionesExtraDeArchivo();
+    calcularKPIsGlobales();
+    guardarCambiosInstantaneos();
+    await showMessage('Evaluación cargada correctamente.', 'Éxito', 'info');
+  } catch (ex) {
+    isLoadingData = false;
+    await showMessage('Error al cargar el archivo: ' + ex.message, 'Error', 'error');
+  }
+}
+
+/* =====================================================================
+   Reportes PDF
+   ===================================================================== */
+function obtenerFilasOrdenadasPdf() {
+  const res = [];
+  const usadas = new Set();
+  secciones.forEach(function (sec) {
+    rows.forEach(function (row) {
+      if (row.sec === sec.nombre) { res.push(row); usadas.add(row); }
+    });
+  });
+  rows.forEach(function (row) { if (!usadas.has(row)) res.push(row); });
+  return res;
+}
+
+async function btnExportarPDF_Click() {
+  const areaNom = areaLabel().replace(/ /g, '_');
+  const fname = 'Reporte_KPI_' + areaNom + '_' + stamp(true) + '.pdf';
+  try {
+    const doc = buildReportePdf({
+      area: areaLabel(),
+      evaluado: txtNombreEvaluado.value,
+      puestoEvaluado: txtPuestoEvaluado.value,
+      evaluador: txtNombreEvaluador.value,
+      puestoEvaluador: txtPuestoEvaluador.value,
+      fechaEmision: fechaEmision(),
+      secciones: secciones,
+      valGlobal: valGlobal,
+      filas: obtenerFilasOrdenadasPdf()
+    });
+    doc.save(fname);
+    await showMessage('Reporte PDF generado correctamente:\n' + fname + '\n\n(Revisa tu carpeta de descargas.)', 'Exportación Exitosa', 'info');
+  } catch (ex) {
+    await showMessage('Error al generar el PDF: ' + ex.message, 'Error', 'error');
+  }
+}
+
+async function btnExportarCronogramaPDF_Click() {
+  const areaNom = areaLabel().replace(/ /g, '_');
+  const fname = 'CRONOGRAMA_ENTREGAS_' + areaNom + '_' + stamp(true) + '.pdf';
+  try {
+    const now = new Date();
+    const doc = buildCronogramaPdf({
+      area: areaLabel(),
+      evaluado: txtNombreEvaluado.value,
+      evaluador: txtNombreEvaluador.value,
+      fechaEmision: fechaEmision(),
+      secciones: secciones,
+      actividadesPorDia: extraerActividadesPorDia,
+      anio: now.getFullYear(),
+      mes: now.getMonth()
+    });
+    doc.save(fname);
+    await showMessage('El Reporte Ejecutivo de Entregables en PDF se ha generado correctamente.', 'Exportación Completa', 'info');
+  } catch (ex) {
+    await showMessage('Error al generar el PDF del Cronograma: ' + ex.message, 'Error', 'error');
+  }
+}
+
+async function btnExportarCronogramaExcel_Click() {
+  const areaNom = areaLabel().replace(/ /g, '_');
+  const fname = 'CRONOGRAMA_' + areaNom + '_' + stamp(false) + '.xls';
+  try {
+    const h = [];
+    h.push("<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:x='urn:schemas-microsoft-com:office:excel' xmlns='http://www.w3.org/TR/REC-html40'>");
+    h.push("<head><meta charset='utf-8'/><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets>");
+    h.push('<x:ExcelWorksheet><x:Name>' + esc(areaNom.replace(/[\\/?*\[\]:]/g, '_').substring(0, 31)) + '</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet>');
+    h.push('</x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body>');
+    h.push('<h2>CRONOGRAMA DE ENTREGAS - ÁREA: ' + esc(areaLabel()) + '</h2>');
+    h.push("<table border='1' style='border-collapse:collapse; font-family:Segoe UI, Arial; font-size:10pt;'>");
+    h.push("<tr style='background-color:#1F497D; color:white; font-weight:bold;'>");
+    h.push('<th>Subsección</th><th>Tarea / Indicador</th><th>Regla / Fecha de Entrega</th>');
+    h.push('</tr>');
+    rows.forEach(function (r) {
+      h.push('<tr><td><b>' + esc(r.sec) + '</b></td><td>' + esc(r.tarea) + "</td><td style='background-color:#EBF1F5;'><b>" + esc(r.regla) + '</b></td></tr>');
+    });
+    h.push('</table></body></html>');
+
+    descargar(fname, '\ufeff' + h.join('\r\n'), 'application/vnd.ms-excel;charset=utf-8');
+    await showMessage('El cronograma ha sido generado y descargado correctamente.', 'Descarga Exitosa', 'info');
+  } catch (ex) {
+    await showMessage('Error al exportar el cronograma: ' + ex.message, 'Error', 'error');
+  }
+}
+
+/* =====================================================================
+   Cronograma visual
+   ===================================================================== */
+const MESES = { enero: 1, febrero: 2, marzo: 3, abril: 4, mayo: 5, junio: 6, julio: 7, agosto: 8, septiembre: 9, setiembre: 9, octubre: 10, noviembre: 11, diciembre: 12 };
+
+function diaValido(anio, mes, dia) {
+  if (mes < 1 || mes > 12 || dia < 1) return null;
+  const max = new Date(anio, mes, 0).getDate();
+  return dia <= max ? dia : null;
+}
+
+// Equivalente a DateTime.TryParse: devuelve el día del mes si el texto es una fecha
+function tryParseFecha(texto) {
+  const t = String(texto).trim().toLowerCase();
+  if (!t) return null;
+  const anioActual = new Date().getFullYear();
+  let m;
+  if ((m = t.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})(?:[ t].*)?$/))) return diaValido(+m[1], +m[2], +m[3]);
+  if ((m = t.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})(?:\s.*)?$/))) {
+    const a = +m[3] < 100 ? 2000 + (+m[3]) : +m[3];
+    return diaValido(a, +m[2], +m[1]);
+  }
+  if ((m = t.match(/^(\d{1,2})[\/\-](\d{1,2})$/))) return diaValido(anioActual, +m[2], +m[1]);
+  if ((m = t.match(/^(\d{1,2})\s+de\s+([a-záéíóú]+)(?:\s+de\s+(\d{4}))?$/)) && MESES[m[2]]) {
+    return diaValido(m[3] ? +m[3] : anioActual, MESES[m[2]], +m[1]);
+  }
+  return null;
+}
+
+// ExtraerActividadesPorDia
+function extraerActividadesPorDia(nombreSubseccion) {
+  const dic = new Map();
+  rows.forEach(function (row) {
+    if (row.sec !== nombreSubseccion) return;
+    const regla = String(row.regla).trim();
+    const tarea = String(row.tarea).trim();
+    const dias = [];
+
+    const fecha = tryParseFecha(regla);
+    if (fecha !== null) {
+      dias.push(fecha);
+    } else {
+      const matches = regla.match(/\b\d{1,2}\b/g) || [];
+      matches.forEach(function (mm) {
+        const d = parseInt(mm, 10);
+        if (d >= 1 && d <= 31 && dias.indexOf(d) < 0) dias.push(d);
+      });
+    }
+
+    dias.forEach(function (dia) {
+      if (!dic.has(dia)) dic.set(dia, []);
+      if (dic.get(dia).indexOf(tarea) < 0) dic.get(dia).push(tarea);
+    });
+  });
+  return dic;
+}
+
+function generarVistaCronogramaVisual() {
+  const cont = $('#pnlCronogramaContainer');
+  if (!cont) return;
+  cont.innerHTML = '';
+
+  const now = new Date();
+  const mes = now.getMonth();
+  const anio = now.getFullYear();
+  const diasEnMes = new Date(anio, mes + 1, 0).getDate();
+  const diaInicio = new Date(anio, mes, 1).getDay();
+  const letras = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
+
+  secciones.forEach(function (sec, i) {
+    const color = COLORES_SECCIONES[i % COLORES_SECCIONES.length];
+    const dic = extraerActividadesPorDia(sec.nombre);
+
+    let celdas = letras.map(function (l) { return '<div class="cal-hd">' + l + '</div>'; }).join('');
+    let currentDay = 1;
+    for (let row = 1; row <= 6; row++) {
+      for (let col = 0; col <= 6; col++) {
+        if ((row === 1 && col < diaInicio) || currentDay > diasEnMes) {
+          celdas += '<div></div>';
+        } else {
+          const tareas = dic.get(currentDay);
+          if (tareas && tareas.length > 0) {
+            const msj = '📅 DÍA ' + currentDay + ' - ' + sec.nombre + ':\n• ' + tareas.join('\n• ');
+            celdas += '<div class="cal-day act" style="background:' + color + '" data-dia="' + currentDay +
+              '" data-msg="' + esc(msj) + '" title="' + esc(msj) + '">' + currentDay + '</div>';
+          } else {
+            celdas += '<div class="cal-day">' + currentDay + '</div>';
+          }
+          currentDay++;
+        }
+      }
+    }
+
+    const card = document.createElement('div');
+    card.className = 'cal-card';
+    card.innerHTML = '<div class="cal-title" style="color:' + color + '">' + esc(sec.nombre) + '</div><div class="cal-grid">' + celdas + '</div>';
+    cont.appendChild(card);
+  });
+}
+
+/* =====================================================================
+   Gráfico cartesiano de rendimiento (DibujarGraficoXY)
+   ===================================================================== */
+function generarGraficosAnaliticos() {
+  const cont = $('#pnlAnalyticsContainer');
+  if (!cont) return;
+  cont.innerHTML = '';
+
+  const n = rows.length;
+  if (n === 0) return;
+
+  const W = Math.max(1100, n * 70 + 120);
+  const Hh = 520;
+  const marginX = 80, marginYTop = 70, marginYBottom = 160;
+  const widthXY = W - marginX - 40;
+  const heightXY = Hh - marginYTop - marginYBottom;
+  const px = function (pt) { return (pt * 96 / 72).toFixed(2); };
+
+  let s = '<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + Hh + '" viewBox="0 0 ' + W + ' ' + Hh + '" ' +
+    'font-family="Segoe UI, system-ui, sans-serif" role="img" aria-label="Gráfico de cumplimiento por actividad">';
+  const T = function (txt, x, y, size, weight, fill, anchor, extra) {
+    return '<text x="' + x + '" y="' + y + '" font-size="' + px(size) + '" font-weight="' + weight + '" fill="' + fill +
+      '" text-anchor="' + (anchor || 'start') + '" dominant-baseline="hanging"' + (extra || '') + '>' + esc(txt) + '</text>';
+  };
+
+  s += '<rect x="0.5" y="0.5" width="' + (W - 1) + '" height="' + (Hh - 1) + '" fill="none" stroke="' + COL.border + '"/>';
+  s += T('GRÁFICO CARTESIANO DE RENDIMIENTO DE TODAS LAS ACTIVIDADES', marginX, 15, 11, 700, COL.text);
+  s += T('Cumplimiento (%) ➔', marginX - 60, marginYTop - 25, 8.5, 700, COL.blue);
+  s += T('Actividades / Indicadores ➔', marginX + widthXY - 160, marginYTop + heightXY + 130, 8.5, 700, COL.blue);
+
+  for (let stepY = 0; stepY <= 10; stepY += 2) {
+    const pct = stepY / 10;
+    const yPos = marginYTop + Math.round((1 - pct) * heightXY);
+    s += '<line x1="' + marginX + '" y1="' + yPos + '" x2="' + (marginX + widthXY) + '" y2="' + yPos + '" stroke="' + COL.border + '"/>';
+    s += T(pct0(pct), marginX - 45, yPos - 7, 8, 700, COL.muted);
+  }
+
+  const y90 = marginYTop + Math.round(0.1 * heightXY);
+  const y70 = marginYTop + Math.round(0.3 * heightXY);
+  s += '<line x1="' + marginX + '" y1="' + y90 + '" x2="' + (marginX + widthXY) + '" y2="' + y90 + '" stroke="rgba(48,209,88,0.39)" stroke-dasharray="6 4"/>';
+  s += '<line x1="' + marginX + '" y1="' + y70 + '" x2="' + (marginX + widthXY) + '" y2="' + y70 + '" stroke="rgba(255,159,10,0.39)" stroke-dasharray="6 4"/>';
+
+  s += '<line x1="' + marginX + '" y1="' + marginYTop + '" x2="' + marginX + '" y2="' + (marginYTop + heightXY) + '" stroke="' + COL.text + '" stroke-width="2"/>';
+  s += '<line x1="' + marginX + '" y1="' + (marginYTop + heightXY) + '" x2="' + (marginX + widthXY) + '" y2="' + (marginYTop + heightXY) + '" stroke="' + COL.text + '" stroke-width="2"/>';
+
+  const slotWidth = widthXY / n;
+  const barWidth = Math.min(35, slotWidth * 0.65);
+
+  rows.forEach(function (dr, i) {
+    const nombre = String(dr.tarea);
+    const v = num(dr.cumpl, 1);
+    const centerX = marginX + i * slotWidth + slotWidth / 2;
+    const barLeft = centerX - barWidth / 2;
+    const barHeight = v * heightXY;
+    const barTop = marginYTop + heightXY - barHeight;
+    const colBarra = v >= 0.9 ? COL.green : (v >= 0.7 ? COL.orange : COL.red);
+
+    if (barHeight > 0) {
+      s += '<rect x="' + barLeft.toFixed(2) + '" y="' + barTop.toFixed(2) + '" width="' + barWidth.toFixed(2) + '" height="' + barHeight.toFixed(2) +
+        '" fill="' + colBarra + '"><title>' + esc(nombre + ' - ' + pct0(v)) + '</title></rect>';
+    }
+
+    const dentro = v >= 0.98;
+    s += T(pct0(v), centerX.toFixed(2), (dentro ? barTop + 2 : barTop - 15).toFixed(2), 7.5, 700, dentro ? '#000' : colBarra, 'middle');
+
+    const corto = nombre.length > 28 ? nombre.substring(0, 25) + '...' : nombre;
+    s += '<g transform="translate(' + centerX.toFixed(2) + ',' + (marginYTop + heightXY + 10) + ') rotate(45)">' +
+      T(corto, 0, 0, 7.5, 400, COL.text) + '</g>';
+  });
+
+  s += '</svg>';
+
+  const panel = document.createElement('div');
+  panel.className = 'chart-panel';
+  panel.style.width = W + 'px';
+  panel.innerHTML = s;
+  cont.appendChild(panel);
+}
+
+/* =====================================================================
+   Direcciones, áreas y pantalla de inicio
+   ===================================================================== */
+function llenarDirecciones() {
+  cmbDir.innerHTML = '';
+  listaDirecciones().forEach(function (d) {
+    const o = document.createElement('option');
+    o.value = d; o.textContent = d;
+    cmbDir.appendChild(o);
+  });
+  cmbDir.value = dirActual;
+}
+
+function llenarAreas(seleccionar) {
+  cmbArea.innerHTML = '';
+  const lista = areasDeDireccion(dirActual);
+  lista.forEach(function (a) {
+    const o = document.createElement('option');
+    o.value = a; o.textContent = a;
+    cmbArea.appendChild(o);
+  });
+  if (seleccionar && lista.indexOf(seleccionar) >= 0) cmbArea.value = seleccionar;
+  else cmbArea.selectedIndex = lista.length ? 0 : -1;
+}
+
+function vaciarVista() {
+  secciones = []; rows = []; selectedRow = null; seccionesExtra.clear();
+  isLoadingData = true;
+  [txtNombreEvaluado, txtPuestoEvaluado, txtNombreEvaluador, txtPuestoEvaluador].forEach(function (i) { i.value = ''; });
+  isLoadingData = false;
+  reconstruirCardsUI();
+  llenarComboSecciones();
+  calcularKPIsGlobales();
+}
+
+function mostrarApp() {
+  $('#home').hidden = true;
+  $('#appView').hidden = false;
+  $('#btnHome').hidden = false;
+}
+
+function mostrarHome() {
+  if (!$('#appView').hidden && cmbArea.value) guardarCambiosInstantaneos();
+  renderHome();
+  $('#appView').hidden = true;
+  $('#btnHome').hidden = true;
+  $('#home').hidden = false;
+}
+
+function abrirArea(dir, area) {
+  if (cmbArea.value && !$('#appView').hidden) guardarCambiosInstantaneos();
+  dirActual = dir;
+  llenarDirecciones();
+  llenarAreas(area);
+  selectedRow = null;
+  mostrarApp();
+  if (cmbArea.value) setupArea(cmbArea.value, false); else vaciarVista();
+}
+
+/* Resumen de un área sin tocar la vista actual (para la pantalla de inicio) */
+function resumenArea(dir, area) {
+  const key = areaKeyOf(dir, area);
+  const d = defArea(dir, area);
+  const secs = d.secciones.map(function (s) { return { nombre: s[0], pond: s[1], extra: false }; });
+  const rs = d.filas.map(function (f) { return { sec: d.secciones[f[0]][0], tarea: f[1], pond: f[3], err: f[4], cumpl: f[5] }; });
+  const extraNames = new Set();
+
+  leerSeccionesExtra(key).forEach(function (def) {
+    if (!secs.some(function (s) { return s.nombre.toLowerCase() === def[0].toLowerCase(); })) {
+      secs.push({ nombre: def[0], pond: def[1], extra: true });
+      extraNames.add(def[0]);
+    }
+  });
+
+  if (extraNames.size) {
+    let sx = 0, sb = 0;
+    secs.forEach(function (s) { if (s.extra) sx += s.pond; else sb += s.pond; });
+    if (sb > 0) {
+      const f = Math.max(0, 1 - sx) / sb;
+      secs.forEach(function (s) { if (!s.extra) s.pond *= f; });
+    }
+    let j = 0;
+    while (Object.prototype.hasOwnProperty.call(db, key + '_ActExtra_' + j)) {
+      const p = String(db[key + '_ActExtra_' + j]).split('~');
+      if (p.length >= 4 && extraNames.has(p[0])) {
+        let pond = parseFloat(p[3]);
+        if (!isFinite(pond)) pond = 0.1;
+        rs.push({ sec: p[0], tarea: p[1], pond: pond, err: 0, cumpl: 1 });
+      }
+      j++;
+    }
+  }
+
+  rs.forEach(function (r) {
+    const k = key + '|' + r.sec + '|' + r.tarea;
+    const e = parseFloat(db[k + '|Errores']);
+    const c = parseFloat(db[k + '|Cumplimiento']);
+    if (isFinite(e)) r.err = e;
+    if (isFinite(c)) r.cumpl = c;
+  });
+
+  let global = 0, sumP = 0;
+  secs.forEach(function (s) {
+    let v = 0;
+    rs.forEach(function (r) {
+      if (r.sec === s.nombre) {
+        let c = r.cumpl;
+        if (r.err > 0) c = Math.max(0, 1 - r.err);
+        v += c * r.pond;
+      }
+    });
+    global += v * s.pond;
+    sumP += s.pond;
+  });
+  if (!secs.some(function (s) { return !s.extra; }) && sumP > 0) global /= sumP;
+  return { global: global, hasData: secs.length > 0 && rs.length > 0, actividades: rs.length };
+}
+
+function colorPct(v) { return v >= 0.9 ? COL.green : (v >= 0.7 ? COL.orange : COL.red); }
+
+function renderHome() {
+  const cont = $('#homeGrid');
+  let html = '';
+  listaDirecciones().forEach(function (dir) {
+    const areas = areasDeDireccion(dir);
+    const res = areas.map(function (a) { return { a: a, r: resumenArea(dir, a) }; });
+    const conDatos = res.filter(function (x) { return x.r.hasData; });
+    const prom = conDatos.length ? conDatos.reduce(function (s, x) { return s + x.r.global; }, 0) / conDatos.length : null;
+    const esBase = DIRECCIONES_BASE.indexOf(dir) >= 0;
+
+    html += '<article class="dir-card">' +
+      '<div class="dir-head"><div><div class="dir-name">' + esc(dir) + '</div>' +
+      '<div class="dir-sub">' + areas.length + (areas.length === 1 ? ' área' : ' áreas') + '</div></div>' +
+      '<div class="dir-score' + (prom === null ? ' nd' : '') + '" style="color:' + (prom === null ? COL.muted : colorPct(prom)) + '">' + (prom === null ? 'Sin datos' : pct1(prom)) + '</div></div>';
+
+    if (res.length === 0) {
+      html += '<p class="dir-empty">Aún no tiene áreas. Ábrela para crear la primera y empezar a evaluar.</p>';
+    } else {
+      html += '<div class="dir-areas">';
+      res.forEach(function (x) {
+        const v = x.r.hasData ? x.r.global : null;
+        html += '<button class="dir-area" data-dir="' + esc(dir) + '" data-area="' + esc(x.a) + '">' +
+          '<span class="dir-area-name">' + esc(x.a) + '</span>' +
+          '<span class="dir-area-pct" style="color:' + (v === null ? COL.muted : colorPct(v)) + '">' + (v === null ? 'Sin datos' : pct1(v)) + '</span>' +
+          '<i class="bar"><b style="width:' + (v === null ? 0 : Math.round(clamp01(v) * 100)) + '%;background:' + (v === null ? COL.border : colorPct(v)) + '"></b></i>' +
+          '</button>';
+      });
+      html += '</div>';
+    }
+
+    html += '<div class="dir-foot"><button class="btn blue" data-open="' + esc(dir) + '">Abrir dirección</button>' +
+      (esBase ? '' : '<button class="btn" data-del="' + esc(dir) + '">Quitar</button>') + '</div></article>';
+  });
+
+  html += '<button class="dir-card dir-new" data-newdir="1"><span class="plus">＋</span><span>Nueva dirección</span></button>';
+  cont.innerHTML = html;
+}
+
+function clickHome(e) {
+  const area = e.target.closest('.dir-area');
+  if (area) { abrirArea(area.dataset.dir, area.dataset.area); return; }
+  const open = e.target.closest('[data-open]');
+  if (open) { abrirArea(open.dataset.open, null); return; }
+  const del = e.target.closest('[data-del]');
+  if (del) { quitarDireccion(del.dataset.del); return; }
+  if (e.target.closest('[data-newdir]')) nuevaDireccion();
+}
+
+/* ---------- Diálogos simples ---------- */
+function dlgTexto(titulo, etiqueta, ayuda) {
+  return modal(function (box, cerrar) {
+    box.innerHTML =
+      '<h3 class="dlg-title">' + esc(titulo) + '</h3>' +
+      '<div class="dlg-grid" style="grid-template-columns:1fr"><label>' + esc(etiqueta) + '</label><input id="t_val" autofocus autocomplete="off"></div>' +
+      (ayuda ? '<p class="dlg-note">' + esc(ayuda) + '</p>' : '') +
+      '<div class="dlg-btns"><button class="btn green" id="t_ok">Aceptar</button><button class="btn" id="t_cancel">Cancelar</button></div>';
+    const inp = box.querySelector('#t_val');
+    box.querySelector('#t_ok').onclick = function () { cerrar(inp.value); };
+    box.querySelector('#t_cancel').onclick = function () { cerrar(null); };
+    inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') cerrar(inp.value); });
+  }, { width: 440, cancelValue: null });
+}
+
+function dlgNumero(titulo, etiqueta, valor, ayuda) {
+  return modal(function (box, cerrar) {
+    box.innerHTML =
+      '<h3 class="dlg-title">' + esc(titulo) + '</h3>' +
+      '<div class="dlg-grid" style="grid-template-columns:1fr 90px"><label>' + esc(etiqueta) + '</label><input id="n_val" autofocus autocomplete="off"></div>' +
+      (ayuda ? '<p class="dlg-note">' + esc(ayuda) + '</p>' : '') +
+      '<div class="dlg-btns"><button class="btn green" id="n_ok">Aceptar</button><button class="btn" id="n_cancel">Cancelar</button></div>';
+    const inp = box.querySelector('#n_val');
+    inp.value = valor;
+    const ok = function () {
+      const s = inp.value.replace('%', '').replace(/,/g, '.').trim();
+      const v = Number(s);
+      cerrar(s !== '' && isFinite(v) ? v : NaN);
+    };
+    box.querySelector('#n_ok').onclick = ok;
+    box.querySelector('#n_cancel').onclick = function () { cerrar(null); };
+    inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') ok(); });
+  }, { width: 420, cancelValue: null });
+}
+
+/* ---------- Administración de direcciones y áreas ---------- */
+async function nuevaDireccion() {
+  const t = await dlgTexto('Nueva dirección', 'Nombre de la dirección:', 'Por ejemplo: COMPRAS. Después podrás crear sus áreas, secciones y actividades.');
+  if (t === null) return;
+  const nombre = nombreSeguro(t);
+  if (!nombre) { await showMessage('Escribe el nombre de la dirección.', 'Atención', 'warn'); return; }
+  if (listaDirecciones().some(function (d) { return d.toLowerCase() === nombre.toLowerCase(); })) {
+    await showMessage('Ya existe una dirección con ese nombre.', 'Atención', 'warn');
+    return;
+  }
+  const c = direccionesCustom();
+  c.push(nombre);
+  db['__Direcciones'] = JSON.stringify(c);
+  guardarDB();
+  renderHome();
+}
+
+async function quitarDireccion(dir) {
+  if (DIRECCIONES_BASE.indexOf(dir) >= 0) return;
+  const n = areasCustom(dir).length;
+  if (!(await showConfirm("¿Quitar la dirección '" + dir + "' con sus " + n + ' área(s) y todas sus evaluaciones?', 'Confirmación', 'question'))) return;
+  Object.keys(db).forEach(function (k) {
+    if (k.indexOf(dir + '/') === 0 || k === '__Areas|' + dir) delete db[k];
+  });
+  db['__Direcciones'] = JSON.stringify(direccionesCustom().filter(function (d) { return d !== dir; }));
+  guardarDB();
+  if (dirActual === dir) { dirActual = DIR_ADMIN; llenarDirecciones(); llenarAreas(); }
+  renderHome();
+}
+
+async function btnNuevaArea_Click() {
+  const t = await dlgTexto('Nueva área', 'Nombre del área (' + dirActual + '):', 'Después crea sus secciones con «Nueva Sección» y captura las actividades de cada una.');
+  if (t === null) return;
+  const nombre = nombreSeguro(t);
+  if (!nombre) { await showMessage('Escribe el nombre del área.', 'Atención', 'warn'); return; }
+  if (areasDeDireccion(dirActual).some(function (a) { return a.toLowerCase() === nombre.toLowerCase(); })) {
+    await showMessage('Ya existe un área con ese nombre en esta dirección.', 'Atención', 'warn');
+    return;
+  }
+  if (cmbArea.value) guardarCambiosInstantaneos();
+  const l = areasCustom(dirActual);
+  l.push(nombre);
+  db['__Areas|' + dirActual] = JSON.stringify(l);
+  guardarDB();
+  llenarAreas(nombre);
+  selectedRow = null;
+  setupArea(nombre, false);
+  await showMessage('Área creada. Ahora agrega su primera sección con «Nueva Sección».', 'Área creada', 'info');
+}
+
+async function btnQuitarArea_Click() {
+  if (!cmbArea.value) return;
+  if (esAreaBase(dirActual, cmbArea.value)) {
+    await showMessage('Las áreas originales de la Dirección de Administración no se pueden quitar. Solo se pueden quitar las áreas creadas a mano.', 'Atención', 'info');
+    return;
+  }
+  const area = cmbArea.value;
+  const key = areaKey();
+  if (!(await showConfirm("¿Quitar el área '" + area + "' con todas sus secciones, actividades y calificaciones?", 'Confirmación', 'question'))) return;
+
+  Object.keys(db).forEach(function (k) {
+    if (k.indexOf(key + '_') === 0 || k.indexOf(key + '|') === 0) delete db[k];
+  });
+  db['__Areas|' + dirActual] = JSON.stringify(areasCustom(dirActual).filter(function (a) { return a !== area; }));
+  guardarDB();
+
+  llenarAreas();
+  if (cmbArea.value) setupArea(cmbArea.value, false); else vaciarVista();
+}
+
+async function btnEditarSeccion_Click() {
+  if (!cmbArea.value) return;
+  const area = areaKey();
+  const nombre = cmbSec.value;
+  if (cmbSec.selectedIndex <= 0 || !seccionesExtra.has(nombre)) {
+    await showMessage('Selecciona en SUBSECCIÓN una sección agregada manualmente. La ponderación de las secciones originales no se modifica.', 'Atención', 'info');
+    return;
+  }
+  const extras = leerSeccionesExtra(area);
+  const actual = (extras.filter(function (x) { return x[0] === nombre; })[0] || [nombre, 0])[1];
+  let otros = 0;
+  extras.forEach(function (x) { if (x[0] !== nombre) otros += x[1]; });
+  const max = limiteSecciones() - otros;
+
+  const v = await dlgNumero('Ponderación de la sección', 'Ponderación (%):', fmt1(actual * 100), 'Máximo disponible: ' + fmt1(max * 100) + '%');
+  if (v === null) return;
+  if (!(v >= 1) || v > max * 100 + 0.0001) {
+    await showMessage('La ponderación debe estar entre 1% y ' + fmt1(max * 100) + '%.', 'Atención', 'warn');
+    return;
+  }
+  extras.forEach(function (x) { if (x[0] === nombre) x[1] = v / 100; });
+  secciones.forEach(function (s) { if (s.nombre === nombre) s.pond = v / 100; });
+  escribirSeccionesExtra(area, extras);
+  refrescarUISecciones(nombre);
+  guardarCambiosInstantaneos();
+}
+
+/* =====================================================================
+   Inicio (Form1_Load)
+   ===================================================================== */
+function inicializar() {
+  cmbArea = $('#cmbAreaEvaluada');
+  cmbSec = $('#cmbFiltroSeccion');
+  txtBuscar = $('#txtBuscar');
+  gridBody = $('#gridBody');
+  pnlCards = $('#pnlCardsContainer');
+  txtNombreEvaluado = $('#txtNombreEvaluado');
+  txtPuestoEvaluado = $('#txtPuestoEvaluado');
+  txtNombreEvaluador = $('#txtNombreEvaluador');
+  txtPuestoEvaluador = $('#txtPuestoEvaluador');
+
+  cargarBaseDeDatosGeneral();
+
+  cmbDir = $('#cmbDireccion');
+  llenarDirecciones();
+
+  // Guardado instantáneo al escribir en los datos de la evaluación
+  [txtNombreEvaluado, txtPuestoEvaluado, txtNombreEvaluador, txtPuestoEvaluador].forEach(function (inp) {
+    inp.addEventListener('input', guardarCambiosInstantaneos);
+  });
+
+  cmbArea.addEventListener('change', function () { selectedRow = null; setupArea(cmbArea.value, false); });
+  cmbSec.addEventListener('change', aplicarFiltrosGrid);
+  txtBuscar.addEventListener('input', aplicarFiltrosGrid);
+
+  $('#btnCalcular').onclick = btnCalcular_Click;
+  $('#btnGuardarLocal').onclick = btnGuardarLocal_Click;
+  $('#btnCargarLocal').onclick = btnCargarLocal_Click;
+  $('#btnExportarPDF').onclick = btnExportarPDF_Click;
+  $('#btnLimpiarCampos').onclick = btnLimpiarCampos_Click;
+  $('#btnReiniciarArea').onclick = btnReiniciarArea_Click;
+  $('#btnAgregarActividad').onclick = btnAgregarActividad_Click;
+  $('#btnModificarActividad').onclick = btnModificarActividad_Click;
+  $('#btnEliminarActividad').onclick = btnEliminarActividad_Click;
+  $('#btnAgregarSeccion').onclick = btnAgregarSeccion_Click;
+  $('#btnEliminarSeccion').onclick = btnEliminarSeccion_Click;
+  $('#btnExportarCronogramaExcel').onclick = btnExportarCronogramaExcel_Click;
+  $('#btnExportarCronogramaPDF').onclick = btnExportarCronogramaPDF_Click;
+
+  // Clic en un día con entregas: muestra el detalle
+  $('#pnlCronogramaContainer').addEventListener('click', function (e) {
+    const d = e.target.closest('.cal-day.act');
+    if (d) showMessage(d.dataset.msg, 'Actividades del Día ' + d.dataset.dia, 'info');
+  });
+
+  // Pestañas
+  document.querySelectorAll('.tab').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      document.querySelectorAll('.tab').forEach(function (t) { t.classList.toggle('active', t === tab); });
+      document.querySelectorAll('.tab-page').forEach(function (p) { p.classList.toggle('active', p.id === 'tab-' + tab.dataset.tab); });
+    });
+  });
+
+  conectarGrid();
+
+  // FormClosing: guarda de forma forzada al cerrar
+  window.addEventListener('pagehide', guardarCambiosInstantaneos);
+  window.addEventListener('beforeunload', guardarCambiosInstantaneos);
+  document.addEventListener('visibilitychange', function () { if (document.hidden) guardarCambiosInstantaneos(); });
+
+  // Nuevos controles: direcciones, áreas y ponderación de secciones
+  cmbDir.addEventListener('change', function () { abrirArea(cmbDir.value, null); });
+  $('#btnHome').onclick = mostrarHome;
+  $('#btnNuevaArea').onclick = btnNuevaArea_Click;
+  $('#btnQuitarArea').onclick = btnQuitarArea_Click;
+  $('#btnEditarSeccion').onclick = btnEditarSeccion_Click;
+  $('#homeGrid').addEventListener('click', clickHome);
+
+  mostrarHome();
+}
+
+document.addEventListener('DOMContentLoaded', inicializar);
+
+  </script>
+</body>
+</html>
