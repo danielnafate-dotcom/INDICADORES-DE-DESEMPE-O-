@@ -4,294 +4,393 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Evaluación de KPI - Elaborado: Ing. Daniel Nafate</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
 /* =====================================================================
    Evaluación de KPI - Elaborado: Ing. Daniel Nafate
-   Paleta idéntica a la aplicación original en VB
+   Tablero claro con menú lateral oscuro. El medidor (velocímetro) es la
+   pieza central: todo lo demás es sobrio para que el semáforo destaque.
    ===================================================================== */
 :root {
-  --bg: #0f1117;
-  --card: #1a1d26;
-  --border: #2a2e3d;
-  --header: #202430;
-  --text: #f0f2f5;
-  --muted: #828899;
-  --blue: #0a84ff;
-  --purple: #af52de;
-  --green: #30d158;
-  --orange: #ff9f0a;
-  --red: #ff453a;
-  --sel: #232838;
-  --row-ok: #121e18;
-  --row-warn: #201c12;
-  --row-bad: #231416;
-  --font: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --ink: #10243b;
+  --ink-2: #1a3453;
+  --ink-3: #274568;
+  --paper: #f2f4f7;
+  --surface: #ffffff;
+  --line: #dde3eb;
+  --line-2: #eaeef3;
+  --text: #1c2b3c;
+  --muted: #667689;
+  --accent: #1f5be0;
+  --accent-soft: #e8efff;
+  --ok: #1b9e5b;
+  --warn: #d98a0b;
+  --bad: #d2453f;
+  --violet: #7447cc;
+  --side-text: #c4d1e0;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --body: "Public Sans", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --radius: 10px;
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 
 html, body {
   margin: 0;
-  min-height: 100%;
-  background: var(--bg);
+  background: var(--paper);
   color: var(--text);
-  font-family: var(--font);
-  font-size: 13px;
+  font-family: var(--body);
+  font-size: 14px;
+  line-height: 1.45;
 }
+button, input, select { font-family: inherit; font-size: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.ctr { text-align: center; }
 
-button, input, select { font-family: inherit; }
-:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
+/* ---------- Estructura ---------- */
+.shell { display: grid; grid-template-columns: 290px minmax(0, 1fr); min-height: 100vh; }
+.main { padding: 26px 30px 48px; min-width: 0; }
 
-/* ---------- Barra de título ---------- */
-.titlebar {
+/* ---------- Menú lateral ---------- */
+.side {
+  background: var(--ink);
+  color: var(--side-text);
+  padding: 22px 14px 24px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.brand { display: flex; align-items: center; gap: 12px; padding: 4px 8px 20px; }
+.brand-mark { width: 40px; height: 40px; flex: 0 0 auto; }
+.brand-name { font-family: var(--display); font-weight: 800; font-size: 18px; color: #fff; letter-spacing: -0.01em; line-height: 1.1; }
+.brand-by { font-size: 11.5px; color: #8fa3bb; margin-top: 3px; }
+
+.nav-home, .nav-dir-btn, .nav-area, .nav-add {
+  width: 100%;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 8px 18px;
-  font-size: 12px;
-  color: var(--muted);
-  border-bottom: 1px solid var(--border);
-  background: var(--header);
-}
-
-/* ---------- Panel superior ---------- */
-.panel-top {
-  display: flex;
-  gap: 20px;
-  align-items: flex-start;
-  padding: 12px 15px;
-}
-
-.cards {
-  flex: 1 1 auto;
-  min-width: 0;
-  display: flex;
-  flex-wrap: nowrap;
   gap: 10px;
-  overflow-x: auto;
-  padding-bottom: 6px;
+  background: transparent;
+  border: 0;
+  color: var(--side-text);
+  text-align: left;
+  cursor: pointer;
+  border-radius: 8px;
+  padding: 9px 10px;
 }
+.nav-home { font-weight: 600; margin-bottom: 8px; }
+.nav-home:hover, .nav-dir-btn:hover, .nav-area:hover { background: var(--ink-2); color: #fff; }
+.nav-home.on, .nav-dir.open > .nav-dir-btn { background: var(--ink-3); color: #fff; }
+.nav-label { font-size: 11.5px; color: #7f95ad; padding: 6px 10px 4px; font-weight: 600; }
 
-.card {
-  flex: 0 0 185px;
-  height: 110px;
-  background: var(--card);
-  border: 1px solid var(--border);
-  padding: 8px;
-}
-.card-title {
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--muted);
-  height: 40px;
-  line-height: 1.3;
-  overflow: hidden;
-}
-.card-title.blue { color: var(--blue); font-size: 10.5px; }
-.card-val { font-size: 21px; font-weight: 700; margin-top: 4px; color: var(--text); }
-.card-val.global { font-size: 24px; color: var(--green); }
-
-.eval { flex: 0 0 640px; max-width: 100%; }
-.eval-title { font-size: 10.5px; font-weight: 700; color: var(--blue); margin-bottom: 6px; }
-.eval-grid {
-  display: grid;
-  grid-template-columns: 62px 1fr 68px 1fr;
-  gap: 6px 8px;
-  align-items: center;
-}
-.eval-grid label { font-size: 10.5px; color: var(--muted); }
-.eval-grid input {
-  background: var(--card);
-  color: var(--text);
-  border: 1px solid var(--border);
-  padding: 4px 6px;
+.nav-dir-btn { font-weight: 600; }
+.nav-dir-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chip {
+  flex: 0 0 auto;
   font-size: 11.5px;
-  min-width: 0;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-variant-numeric: tabular-nums;
 }
-.eval-btns { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 12px; }
+.nav-areas {
+  margin: 2px 0 8px 16px;
+  padding-left: 8px;
+  border-left: 1px solid var(--ink-3);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.nav-area { font-size: 13px; padding: 7px 8px; }
+.nav-area .dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; }
+.nav-area span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav-area em { font-style: normal; font-size: 11.5px; color: #9fb2c8; font-variant-numeric: tabular-nums; }
+.nav-area.on { background: #fff; color: var(--ink); font-weight: 600; }
+.nav-area.on em { color: var(--muted); }
+.nav-add { color: #8fa9ff; font-size: 13px; padding: 8px 10px; }
+.nav-add:hover { color: #fff; background: var(--ink-2); }
+nav#navDirs { display: flex; flex-direction: column; gap: 2px; }
+.side > .nav-add { margin-top: 8px; border: 1px dashed var(--ink-3); justify-content: center; }
+
+.menu-btn {
+  display: none;
+  margin-bottom: 14px;
+  background: var(--ink);
+  color: #fff;
+  border: 0;
+  border-radius: 8px;
+  padding: 9px 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ---------- Títulos ---------- */
+h1 { font-family: var(--display); font-weight: 800; letter-spacing: -0.02em; margin: 0; }
+.page-head h1 { font-size: 32px; }
+.page-head p { margin: 6px 0 24px; color: var(--muted); max-width: 66ch; }
+.panel-title { font-family: var(--display); font-size: 15px; font-weight: 700; margin: 0 0 12px; letter-spacing: -0.005em; }
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
 
 /* ---------- Botones ---------- */
 .btn {
-  border: 0;
-  background: var(--border);
+  background: var(--surface);
   color: var(--text);
-  font-size: 11px;
-  font-weight: 700;
-  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  padding: 8px 14px;
   cursor: pointer;
   white-space: nowrap;
+  transition: background 0.12s, border-color 0.12s;
 }
-.btn:hover { filter: brightness(1.18); }
-.btn:active { filter: brightness(0.95); }
-.btn.blue { background: var(--blue); }
-.btn.green { background: var(--green); color: #000; }
-.btn.red { background: var(--red); }
-.btn.purple { background: var(--purple); }
+.btn:hover { background: var(--paper); border-color: #c7d0dc; }
+.btn:active { transform: translateY(1px); }
+.btn.blue { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn.blue:hover { background: #1a4cc0; border-color: #1a4cc0; }
+.btn.green { background: var(--ok); color: #fff; border-color: var(--ok); }
+.btn.green:hover { background: #168550; border-color: #168550; }
+.btn.red { color: var(--bad); border-color: #efc5c2; }
+.btn.red:hover { background: #fdf0ef; border-color: var(--bad); }
+.btn.purple { color: var(--violet); border-color: #d6c9f0; }
+.btn.purple:hover { background: #f5f0fd; border-color: var(--violet); }
 
-/* ---------- Pestañas ---------- */
-.tabs {
-  display: flex;
-  gap: 2px;
-  padding: 0 15px;
-  border-bottom: 1px solid var(--border);
+/* ---------- Pantalla de inicio ---------- */
+.home-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 18px; align-items: start; }
+
+.dir-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px 18px 16px;
+  text-align: left;
+  font: inherit;
+  color: var(--text);
 }
-.tab {
+.dir-top { display: grid; grid-template-columns: 128px minmax(0, 1fr); gap: 14px; align-items: center; margin-bottom: 14px; }
+.dir-name { font-family: var(--display); font-weight: 800; font-size: 15px; letter-spacing: -0.005em; line-height: 1.15; overflow-wrap: break-word; }
+.dir-sub { color: var(--muted); font-size: 12.5px; margin-top: 5px; }
+.dir-empty { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
+.dir-areas { display: flex; flex-direction: column; margin-bottom: 14px; border-top: 1px solid var(--line-2); }
+.dir-area {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 5px 10px;
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line-2);
+  padding: 9px 4px;
+  cursor: pointer;
+  text-align: left;
+  font-size: 13px;
+}
+.dir-area:hover { background: var(--accent-soft); }
+.dir-area-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dir-area-pct { font-weight: 700; font-variant-numeric: tabular-nums; }
+.dir-area .bar { grid-column: 1 / -1; display: block; height: 4px; background: var(--line-2); border-radius: 4px; overflow: hidden; }
+.dir-area .bar b { display: block; height: 100%; border-radius: 4px; }
+.dir-foot { display: flex; gap: 8px; }
+.dir-new {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 190px;
+  border: 2px dashed var(--line);
   background: transparent;
   color: var(--muted);
+  cursor: pointer;
+  font-weight: 600;
+}
+.dir-new:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.dir-new .plus { font-family: var(--display); font-size: 34px; line-height: 1; }
+
+/* ---------- Medidor ---------- */
+.gauge { display: block; width: 100%; height: auto; }
+.gauge .track { stroke: var(--line-2); }
+.gauge .tick { stroke: var(--ink); stroke-width: 2; opacity: 0.55; }
+.gauge .tick-lbl { font-size: 9px; fill: var(--muted); font-weight: 600; }
+.gauge .num-big { font-family: var(--display); font-weight: 800; letter-spacing: -0.03em; }
+.gauge .sub { font-size: 10px; fill: var(--muted); font-weight: 600; }
+
+/* ---------- Encabezado del área ---------- */
+.area-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 14px 24px; align-items: flex-end; margin-bottom: 20px; }
+.crumb { color: var(--muted); font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.area-head h1 { font-size: 34px; line-height: 1.05; }
+.area-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* ---------- Resumen ---------- */
+.summary { display: grid; grid-template-columns: 290px minmax(0, 1fr) 330px; gap: 16px; margin-bottom: 22px; align-items: stretch; }
+.gauge-panel { padding: 16px 18px 14px; display: flex; flex-direction: column; justify-content: space-between; }
+.gauge-main { width: 100%; max-width: 260px; margin: 0 auto; }
+.gauge-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; justify-content: center; font-size: 11.5px; color: var(--muted); margin-top: 6px; }
+.gauge-legend i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
+.gauge-note { text-align: center; font-size: 12px; color: var(--warn); font-weight: 600; min-height: 16px; margin-top: 4px; }
+
+.meters-panel { padding: 16px 20px 18px; }
+.meters { display: flex; flex-direction: column; gap: 13px; max-height: 250px; overflow-y: auto; padding-right: 4px; }
+.meter { display: grid; grid-template-columns: 1fr auto; gap: 5px 12px; align-items: baseline; }
+.meter-name { font-weight: 600; font-size: 13px; line-height: 1.25; }
+.meter-name small { color: var(--muted); font-weight: 500; margin-left: 6px; font-size: 12px; }
+.meter-val { font-family: var(--display); font-weight: 800; font-size: 17px; font-variant-numeric: tabular-nums; }
+.meter-bar { grid-column: 1 / -1; height: 8px; border-radius: 8px; background: var(--line-2); overflow: hidden; }
+.meter-bar i { display: block; height: 100%; width: 0; border-radius: 8px; background: var(--ok); transition: width 0.35s ease; }
+.meters .empty { color: var(--muted); font-size: 13px; }
+
+.eval-panel { padding: 16px 20px 18px; }
+.eval-grid { display: grid; gap: 4px; }
+.eval-grid label { font-size: 12px; color: var(--muted); font-weight: 600; margin-top: 8px; }
+.eval-grid input {
+  background: var(--paper);
+  border: 1px solid transparent;
+  border-radius: 7px;
+  padding: 7px 10px;
+  width: 100%;
+}
+.eval-grid input:hover { border-color: var(--line); }
+.eval-grid input:focus { background: #fff; border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
+
+/* ---------- Pestañas segmentadas ---------- */
+.tabs { display: inline-flex; background: #e4e9f0; border-radius: 10px; padding: 4px; gap: 2px; margin-bottom: 14px; }
+.tab {
   border: 0;
-  border-bottom: 3px solid transparent;
-  font-size: 12px;
-  font-weight: 700;
-  padding: 9px 16px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 600;
+  padding: 8px 20px;
+  border-radius: 7px;
   cursor: pointer;
 }
 .tab:hover { color: var(--text); }
-.tab.active { color: var(--text); border-bottom-color: var(--blue); background: var(--card); }
+.tab.active { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgba(16, 36, 59, 0.12); }
 
-.tab-page { display: none; padding: 0 15px 20px; }
+.tab-page { display: none; }
 .tab-page.active { display: block; }
+#tab-captura, #tab-analytics { padding: 16px 18px 18px; }
 
-/* ---------- Filtros ---------- */
-.filtros {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 10px;
-  padding: 12px 0 6px;
-}
-.filtros .lbl { font-size: 12px; font-weight: 700; white-space: nowrap; }
-.filtros .lbl.orange { color: var(--orange); }
-.filtros .lbl.blue { color: var(--blue); }
-.filtros .lbl.muted { color: var(--muted); }
-.filtros select, .filtros input {
-  background: var(--card);
+/* ---------- Barra de herramientas ---------- */
+.toolbar { display: flex; flex-wrap: wrap; gap: 14px 24px; justify-content: space-between; align-items: flex-end; }
+.tool-filters { display: flex; flex-wrap: wrap; gap: 12px; flex: 1 1 380px; }
+.field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); font-weight: 600; }
+.field.grow { flex: 1 1 200px; }
+.field select, .field input {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
   color: var(--text);
-  border: 1px solid var(--border);
-  padding: 6px 8px;
-  font-size: 12.5px;
+  font-weight: 500;
+  min-width: 0;
 }
-.filtros select { font-weight: 700; }
-#cmbAreaEvaluada { width: 240px; }
-#cmbFiltroSeccion { width: 320px; }
-#txtBuscar { flex: 1 1 160px; min-width: 120px; }
+.field select { min-width: 260px; max-width: 100%; }
+.field input:focus, .field select:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
+.tool-actions { display: flex; flex-wrap: wrap; gap: 10px 18px; }
+.group { display: flex; flex-wrap: wrap; gap: 6px; }
+.tool-actions .group + .group { padding-left: 18px; border-left: 1px solid var(--line); }
+.hint { color: var(--muted); font-size: 12.5px; margin: 10px 0 12px; }
 
-.crud { display: flex; flex-wrap: wrap; gap: 8px; padding: 6px 0 10px; }
-
-/* ---------- Grid ---------- */
-.grid-wrap {
-  overflow: auto;
-  max-height: calc(100vh - 360px);
-  min-height: 280px;
-  border: 1px solid var(--border);
-}
-table.grid {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
-  min-width: 960px;
-}
+/* ---------- Tabla ---------- */
+.grid-wrap { overflow: auto; max-height: calc(100vh - 220px); min-height: 260px; border: 1px solid var(--line); border-radius: 8px; }
+table.grid { width: 100%; border-collapse: collapse; table-layout: fixed; min-width: 980px; }
 .grid thead th {
   position: sticky;
   top: 0;
   z-index: 2;
-  background: var(--header);
+  background: #f7f9fb;
   color: var(--muted);
   font-size: 12px;
   font-weight: 700;
   text-align: left;
-  height: 45px;
-  padding: 0 10px;
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--line);
 }
+.grid thead th.num { text-align: right; }
+.grid thead th.ctr { text-align: center; }
 .grid td {
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--border);
-  font-size: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line-2);
   vertical-align: middle;
-  word-wrap: break-word;
   overflow-wrap: anywhere;
-  height: 42px;
+  background: var(--surface);
 }
-.grid tbody tr { background: var(--bg); cursor: default; }
-.grid tbody tr.ok { background: var(--row-ok); }
-.grid tbody tr.warn { background: var(--row-warn); }
-.grid tbody tr.bad { background: var(--row-bad); }
-.grid tbody tr.sel { background: var(--sel); }
-.grid td.ed:hover { box-shadow: inset 0 0 0 1px var(--border); }
-.grid .c-regla { color: var(--blue); font-weight: 700; }
-.grid .num { text-align: right; }
-.grid .ctr { text-align: center; }
-.grid .neg { color: var(--red); font-weight: 700; }
-.grid .cumpl-ok { color: var(--green); font-weight: 700; }
-.grid .cumpl-warn { color: var(--orange); font-weight: 700; }
-.grid .cumpl-bad { color: var(--red); font-weight: 700; }
-.grid .ev-link { color: var(--blue); text-decoration: underline; font-size: 11.5px; cursor: pointer; }
-.grid .ev-empty { color: var(--muted); }
+.grid tbody tr:last-child td { border-bottom: 0; }
+.grid tbody tr td:first-child { box-shadow: inset 4px 0 0 var(--ok); font-weight: 600; }
+.grid tbody tr.warn td:first-child { box-shadow: inset 4px 0 0 var(--warn); }
+.grid tbody tr.bad td:first-child { box-shadow: inset 4px 0 0 var(--bad); }
+.grid tbody tr:hover td { background: #fafbfd; }
+.grid tbody tr.sel td { background: var(--accent-soft); }
+.grid td.ed { cursor: text; }
+.grid td.ed:hover { background: #f1f6ff; }
+.grid .c-regla { color: var(--accent); font-weight: 600; }
+.grid .muted { color: var(--muted); }
+.grid .err-on { color: var(--bad); font-weight: 700; }
+.grid .cum { display: grid; grid-template-columns: 58px 1fr; align-items: center; gap: 8px; }
+.grid .cum b { font-family: var(--display); font-weight: 800; font-size: 13.5px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.grid .cum i { display: block; height: 6px; border-radius: 6px; background: var(--line-2); overflow: hidden; }
+.grid .cum u { display: block; height: 100%; border-radius: 6px; text-decoration: none; }
+.grid .cumpl-ok { color: var(--ok); }
+.grid .cumpl-warn { color: var(--warn); }
+.grid .cumpl-bad { color: var(--bad); }
+.grid .ev-link { color: var(--accent); text-decoration: underline; cursor: pointer; font-size: 13px; }
 .grid .ev-edit {
   margin-left: 6px;
   background: transparent;
-  border: 1px solid var(--border);
+  border: 1px solid var(--line);
   color: var(--muted);
+  border-radius: 5px;
   font-size: 11px;
-  padding: 0 5px;
+  padding: 0 6px;
   cursor: pointer;
 }
-.grid .ev-edit:hover { color: var(--text); }
-.grid .empty-msg { text-align: center; color: var(--muted); padding: 40px 10px; }
+.grid .ev-edit:hover { color: var(--text); border-color: #c7d0dc; }
+.grid .empty-msg { text-align: center; color: var(--muted); padding: 48px 16px; background: var(--surface); }
 .grid td input.inline {
   width: 100%;
-  background: var(--card);
-  color: var(--text);
-  border: 1px solid var(--blue);
-  padding: 4px 6px;
-  font-size: 12px;
+  background: #fff;
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  padding: 5px 7px;
 }
 
-/* ---------- Analítica ---------- */
-.analytics { overflow: auto; padding: 20px; background: var(--bg); }
-.chart-panel {
-  background: var(--card);
-  border: 1px solid var(--border);
-}
+/* ---------- Avances ---------- */
+.analytics { overflow: auto; }
+.chart-panel { border: 1px solid var(--line-2); border-radius: 8px; background: #fff; }
 .chart-panel svg { display: block; }
 
 /* ---------- Cronograma ---------- */
-.cron-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  background: var(--card);
-  padding: 8px 12px;
-  margin-top: 12px;
-}
-.cron-head .ttl { font-size: 12px; font-weight: 700; margin-right: auto; }
-.cron-wrap { display: flex; flex-wrap: wrap; gap: 15px; padding: 15px 0; }
-.cal-card {
-  flex: 0 0 360px;
-  max-width: 100%;
-  min-height: 290px;
-  background: var(--card);
-  border: 1px solid var(--border);
-  padding: 10px 12px 12px;
-}
-.cal-title { font-size: 12px; font-weight: 700; margin-bottom: 8px; min-height: 18px; }
-.cal-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  grid-auto-rows: 33px;
-  background: var(--bg);
-  height: 240px;
-}
-.cal-hd { display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: var(--muted); }
-.cal-day { display: flex; align-items: center; justify-content: center; font-size: 11px; margin: 1px; }
-.cal-day.act { color: #000; font-weight: 700; font-size: 11.5px; cursor: pointer; }
+.cron-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px 20px; padding: 14px 18px; }
+.cron-wrap { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; padding: 16px 0; }
+.cal-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px 16px; }
+.cal-title { font-family: var(--display); font-weight: 700; font-size: 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+.cal-title i { width: 10px; height: 10px; border-radius: 3px; flex: 0 0 auto; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); grid-auto-rows: 34px; gap: 2px; }
+.cal-hd { display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--muted); }
+.cal-day { display: flex; align-items: center; justify-content: center; font-size: 12px; border-radius: 6px; font-variant-numeric: tabular-nums; }
+.cal-day.act { color: #fff; font-weight: 700; cursor: pointer; }
+.cal-day.act:hover { filter: brightness(1.1); }
 
 /* ---------- Diálogos ---------- */
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(16, 36, 59, 0.55);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -299,235 +398,268 @@ table.grid {
   padding: 16px;
 }
 .dlg {
-  background: var(--card);
-  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 14px;
   max-width: 100%;
   max-height: 100%;
   overflow: auto;
-  padding: 18px 20px 16px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  padding: 22px 24px 20px;
+  box-shadow: 0 24px 60px rgba(16, 36, 59, 0.35);
 }
-.dlg-title { margin: 0 0 12px; font-size: 14px; }
-.dlg-sec { color: var(--blue); font-weight: 700; font-size: 12.5px; margin-bottom: 14px; }
-.dlg-text { white-space: pre-wrap; font-size: 13px; line-height: 1.45; margin: 0 0 16px; }
-.dlg-note { color: var(--muted); font-size: 11.5px; line-height: 1.4; margin: 14px 0 18px; }
-.dlg-grid { display: grid; grid-template-columns: 170px 1fr; gap: 10px 10px; align-items: center; }
-.dlg-grid label { font-size: 12px; }
+.dlg-title { font-family: var(--display); margin: 0 0 14px; font-size: 18px; font-weight: 800; letter-spacing: -0.01em; }
+.dlg-sec { color: var(--accent); font-weight: 700; font-size: 13px; margin-bottom: 14px; }
+.dlg-text { white-space: pre-wrap; margin: 0 0 18px; line-height: 1.5; }
+.dlg-note { color: var(--muted); font-size: 12.5px; margin: 14px 0 6px; }
+.dlg-grid { display: grid; grid-template-columns: 180px 1fr; gap: 10px 12px; align-items: center; }
+.dlg-grid label { font-size: 13px; font-weight: 600; }
 .dlg-grid input, .dlg-input {
   width: 100%;
-  background: var(--bg);
-  color: #fff;
-  border: 1px solid var(--border);
-  padding: 5px 7px;
-  font-size: 12.5px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 7px 10px;
 }
-.dlg-max { font-size: 11px; color: var(--muted); }
-.ev-row { display: flex; gap: 5px; }
+.dlg-grid input:focus { background: #fff; border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
+.dlg-max { font-size: 12px; color: var(--muted); }
+.ev-row { display: flex; gap: 6px; }
 .ev-row input { flex: 1 1 auto; min-width: 0; }
-.ev-row button { background: var(--border); color: #fff; border: 0; width: 36px; cursor: pointer; }
-.dlg-btns { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
-.dlg-icon { font-size: 22px; margin-right: 10px; }
-.dlg-head { display: flex; align-items: center; margin-bottom: 10px; }
+.ev-row button { background: var(--paper); border: 1px solid var(--line); border-radius: 7px; width: 40px; cursor: pointer; font-weight: 700; }
+.dlg-btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+.dlg-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.dlg-head .dlg-title { margin: 0; }
+.dlg-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--display);
+  font-weight: 800;
+  color: #fff;
+  background: var(--accent);
+  flex: 0 0 auto;
+}
+.dlg-icon.ic-warn { background: var(--warn); }
+.dlg-icon.ic-error { background: var(--bad); }
+.dlg-icon.ic-question { background: var(--violet); }
 .viewer { text-align: center; }
-.viewer img { max-width: min(88vw, 1100px); max-height: 74vh; display: block; margin: 0 auto 12px; }
+.viewer img { max-width: min(88vw, 1100px); max-height: 74vh; display: block; margin: 0 auto 12px; border-radius: 8px; }
 
-@media (max-width: 1150px) {
-  .panel-top { flex-direction: column; }
-  .eval { flex: 1 1 auto; width: 100%; }
+/* ---------- Adaptación a pantallas pequeñas ---------- */
+@media (max-width: 1280px) {
+  .summary { grid-template-columns: 260px minmax(0, 1fr); }
+  .eval-panel { grid-column: 1 / -1; }
+  .eval-grid { grid-template-columns: repeat(2, 1fr); column-gap: 14px; }
+}
+@media (max-width: 980px) {
+  .shell { grid-template-columns: 1fr; }
+  .side { position: fixed; z-index: 900; inset: 0 auto 0 0; width: 300px; max-width: 86vw; transform: translateX(-102%); transition: transform 0.2s; }
+  .side.open { transform: none; }
+  .menu-btn { display: inline-block; }
+  .main { padding: 16px 14px 40px; }
+  .summary { grid-template-columns: 1fr; }
+  .area-head h1 { font-size: 28px; }
 }
 @media (max-width: 640px) {
   .dlg-grid { grid-template-columns: 1fr; }
-  #cmbAreaEvaluada, #cmbFiltroSeccion { width: 100%; }
-  .eval-grid { grid-template-columns: 62px 1fr; }
+  .dir-top { grid-template-columns: 120px 1fr; }
+  .tool-actions .group + .group { padding-left: 0; border-left: 0; }
+  .field select { min-width: 0; width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 
-/* ---------- Pantalla de inicio ---------- */
-[hidden] { display: none !important; }
-.filtros .lbl.purple { color: var(--purple); }
-#cmbDireccion { width: 190px; }
-.card-sub { font-size: 10px; color: var(--muted); margin-top: 2px; }
-
-.home { padding: 26px 20px 40px; max-width: 1500px; margin: 0 auto; }
-.home-title { margin: 0 0 6px; font-size: 22px; font-weight: 700; }
-.home-sub { margin: 0 0 22px; color: var(--muted); font-size: 13px; max-width: 70ch; line-height: 1.5; }
-.home-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; align-items: start; }
-
-.dir-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  padding: 16px 16px 14px;
-  text-align: left;
-  color: var(--text);
-  font: inherit;
-}
-.dir-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
-.dir-name { font-size: 16px; font-weight: 700; }
-.dir-sub { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
-.dir-score { font-size: 26px; font-weight: 700; line-height: 1; }
-.dir-empty { color: var(--muted); font-size: 12.5px; line-height: 1.45; margin: 4px 0 14px; }
-.dir-areas { display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px; }
-.dir-area {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 4px 10px;
-  align-items: center;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  color: var(--text);
-  font: inherit;
-  font-size: 12px;
-  padding: 8px 10px;
-  cursor: pointer;
-  text-align: left;
-}
-.dir-area:hover { border-color: var(--blue); }
-.dir-area-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dir-area-pct { font-weight: 700; }
-.dir-area .bar { grid-column: 1 / -1; display: block; height: 4px; background: var(--border); }
-.dir-area .bar b { display: block; height: 100%; }
-.dir-foot { display: flex; gap: 8px; }
-.dir-new {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 150px;
-  border-style: dashed;
-  color: var(--muted);
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 700;
-}
-.dir-new:hover { color: var(--text); border-color: var(--blue); }
-.dir-new .plus { font-size: 28px; line-height: 1; }
-
-.filtros .break { flex-basis: 100%; height: 0; }
-.dir-score.nd { font-size: 13px; font-weight: 600; }
+.grid tbody tr td.empty-msg { box-shadow: none; font-weight: 400; }
+.empty-state { padding: 44px 28px; text-align: center; margin-bottom: 8px; }
+.empty-state h2 { font-family: var(--display); font-size: 22px; font-weight: 800; margin: 0 0 8px; letter-spacing: -0.01em; }
+.empty-state p { color: var(--muted); max-width: 52ch; margin: 0 auto 20px; }
+#appView.sin-area .summary, #appView.sin-area .tabs, #appView.sin-area .tab-page { display: none !important; }
+#appView.sin-area .area-actions { display: none; }
 
 </style>
 </head>
 <body>
-  <div class="titlebar">
-    <span>Evaluación de KPI - Elaborado: Ing. Daniel Nafate</span>
-    <button class="btn" id="btnHome" hidden>← Todas las direcciones</button>
-  </div>
+<div class="shell">
 
-  <!-- ===== Pantalla de inicio: direcciones ===== -->
-  <main class="home" id="home">
-    <h1 class="home-title">Direcciones a evaluar</h1>
-    <p class="home-sub">Elige una dirección o entra directo a una de sus áreas. El porcentaje es el cumplimiento global con lo capturado hasta ahora.</p>
-    <div class="home-grid" id="homeGrid"></div>
-  </main>
-
-  <div id="appView" hidden>
-
-  <!-- ===== Panel superior: tarjetas + datos de la evaluación ===== -->
-  <header class="panel-top">
-    <div class="cards" id="pnlCardsContainer"></div>
-
-    <div class="eval">
-      <div class="eval-title">DATOS DE LA EVALUACIÓN</div>
-      <div class="eval-grid">
-        <label for="txtNombreEvaluado">Evaluado:</label>
-        <input id="txtNombreEvaluado" autocomplete="off">
-        <label for="txtNombreEvaluador">Evaluador:</label>
-        <input id="txtNombreEvaluador" autocomplete="off">
-        <label for="txtPuestoEvaluado">Puesto:</label>
-        <input id="txtPuestoEvaluado" autocomplete="off">
-        <label for="txtPuestoEvaluador">Puesto:</label>
-        <input id="txtPuestoEvaluador" autocomplete="off">
-      </div>
-      <div class="eval-btns">
-        <button class="btn blue" id="btnCalcular">🔄 Recalcular</button>
-        <button class="btn" id="btnGuardarLocal">💾 Guardar</button>
-        <button class="btn" id="btnCargarLocal">📂 Cargar</button>
-        <button class="btn" id="btnExportarPDF">📄 Generar PDF</button>
-        <button class="btn" id="btnLimpiarCampos">🧹 Limpiar</button>
-        <button class="btn red" id="btnReiniciarArea">♻️ Reiniciar</button>
+  <!-- ===== Menú lateral: direcciones y áreas ===== -->
+  <aside class="side" id="side">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true">
+        <path d="M5 28a15 15 0 0 1 30 0" fill="none" stroke="#5E8BFF" stroke-width="4" stroke-linecap="round"/>
+        <path d="M20 28 28 16" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/>
+        <circle cx="20" cy="28" r="3.4" fill="#fff"/>
+      </svg>
+      <div>
+        <div class="brand-name">Evaluación de KPI</div>
+        <div class="brand-by">Elaborado: Ing. Daniel Nafate</div>
       </div>
     </div>
-  </header>
 
-  <!-- ===== Pestañas ===== -->
-  <nav class="tabs" role="tablist">
-    <button class="tab active" role="tab" data-tab="captura">📝 Captura de Evaluación</button>
-    <button class="tab" role="tab" data-tab="analytics">📊 Visualización de Avances</button>
-    <button class="tab" role="tab" data-tab="cronograma">📅 Cronograma de Fechas</button>
-  </nav>
+    <button class="nav-home on" id="btnHome">Resumen general</button>
+    <div class="nav-label">Direcciones</div>
+    <nav id="navDirs" aria-label="Direcciones y áreas"></nav>
+    <button class="nav-add" id="navNuevaDir">+ Nueva dirección</button>
+  </aside>
 
-  <!-- ===== Captura ===== -->
-  <section class="tab-page active" id="tab-captura">
-    <div class="filtros">
-      <span class="lbl purple">🏛️ DIRECCIÓN:</span>
-      <select id="cmbDireccion"></select>
-      <span class="lbl orange">🏢 ÁREA:</span>
-      <select id="cmbAreaEvaluada"></select>
-      <button class="btn purple" id="btnNuevaArea">➕ Nueva Área</button>
-      <button class="btn" id="btnQuitarArea">➖ Quitar Área</button>
-      <span class="break"></span>
-      <span class="lbl blue">🗂️ SUBSECCIÓN:</span>
-      <select id="cmbFiltroSeccion"></select>
-      <span class="lbl muted">🔎 BUSCAR:</span>
-      <input id="txtBuscar" type="search" autocomplete="off">
+  <div class="main">
+    <button class="menu-btn" id="btnMenu" aria-expanded="false">Menú</button>
+
+    <!-- ===== Resumen general ===== -->
+    <section class="home" id="home">
+      <header class="page-head">
+        <h1>Resumen general</h1>
+        <p>Cumplimiento de cada dirección con lo capturado hasta hoy. Entra a una dirección, o directo a una de sus áreas, para evaluar.</p>
+      </header>
+      <div class="home-grid" id="homeGrid"></div>
+    </section>
+
+    <!-- ===== Evaluación de un área ===== -->
+    <div id="appView" hidden>
+      <header class="area-head">
+        <div>
+          <div class="crumb" id="areaCrumb">Dirección</div>
+          <h1 id="areaTitle">Área</h1>
+        </div>
+        <div class="area-actions" id="areaActions">
+          <button class="btn blue" id="btnCalcular">Recalcular</button>
+          <button class="btn" id="btnGuardarLocal">Guardar</button>
+          <button class="btn" id="btnCargarLocal">Cargar</button>
+          <button class="btn" id="btnExportarPDF">Generar PDF</button>
+          <button class="btn" id="btnLimpiarCampos">Limpiar</button>
+          <button class="btn red" id="btnReiniciarArea">Reiniciar</button>
+          <button class="btn red" id="btnQuitarArea" title="Quitar esta área (solo las creadas a mano)">Quitar área</button>
+        </div>
+      </header>
+
+      <!-- Selectores que usa la lógica (la navegación se hace desde el menú) -->
+      <div hidden>
+        <select id="cmbDireccion"></select>
+        <select id="cmbAreaEvaluada"></select>
+      </div>
+
+      <section class="panel empty-state" id="emptyState" hidden>
+        <h2>Esta dirección aún no tiene áreas</h2>
+        <p>Crea la primera área, luego sus subsecciones con su ponderación y captura las actividades que se van a evaluar.</p>
+        <button class="btn blue" id="btnCrearPrimeraArea">Crear la primera área</button>
+      </section>
+
+      <section class="summary" id="workArea">
+        <div class="panel gauge-panel">
+          <div id="gaugeMain" class="gauge-main"></div>
+          <div class="gauge-legend">
+            <span><i style="background:var(--ok)"></i>90% o más</span>
+            <span><i style="background:var(--warn)"></i>70% a 89%</span>
+            <span><i style="background:var(--bad)"></i>menos de 70%</span>
+          </div>
+          <div class="gauge-note" id="lblPeso"></div>
+        </div>
+
+        <div class="panel meters-panel">
+          <h2 class="panel-title">Cumplimiento por subsección</h2>
+          <div class="meters" id="pnlCardsContainer"></div>
+        </div>
+
+        <div class="panel eval-panel">
+          <h2 class="panel-title">Datos de la evaluación</h2>
+          <div class="eval-grid">
+            <label for="txtNombreEvaluado">Evaluado</label>
+            <input id="txtNombreEvaluado" autocomplete="off">
+            <label for="txtPuestoEvaluado">Puesto del evaluado</label>
+            <input id="txtPuestoEvaluado" autocomplete="off">
+            <label for="txtNombreEvaluador">Evaluador</label>
+            <input id="txtNombreEvaluador" autocomplete="off">
+            <label for="txtPuestoEvaluador">Puesto del evaluador</label>
+            <input id="txtPuestoEvaluador" autocomplete="off">
+          </div>
+        </div>
+      </section>
+
+      <nav class="tabs" id="tabsNav" role="tablist">
+        <button class="tab active" role="tab" data-tab="captura">Captura</button>
+        <button class="tab" role="tab" data-tab="analytics">Avances</button>
+        <button class="tab" role="tab" data-tab="cronograma">Cronograma</button>
+      </nav>
+
+      <!-- ===== Captura ===== -->
+      <section class="tab-page active panel" id="tab-captura">
+        <div class="toolbar">
+          <div class="tool-filters">
+            <label class="field">
+              <span>Subsección</span>
+              <select id="cmbFiltroSeccion"></select>
+            </label>
+            <label class="field grow">
+              <span>Buscar actividad</span>
+              <input id="txtBuscar" type="search" autocomplete="off" placeholder="Escribe parte del nombre">
+            </label>
+          </div>
+          <div class="tool-actions">
+            <div class="group">
+              <button class="btn green" id="btnAgregarActividad">Agregar actividad</button>
+              <button class="btn" id="btnModificarActividad">Modificar</button>
+              <button class="btn red" id="btnEliminarActividad">Eliminar</button>
+            </div>
+            <div class="group">
+              <button class="btn purple" id="btnAgregarSeccion">Nueva sección</button>
+              <button class="btn" id="btnEditarSeccion">Ponderación</button>
+              <button class="btn" id="btnEliminarSeccion">Quitar sección</button>
+            </div>
+          </div>
+        </div>
+        <p class="hint">Doble clic en una celda de fecha, errores, cumplimiento u observaciones para editarla. En evidencia, doble clic adjunta o abre la foto.</p>
+
+        <div class="grid-wrap">
+          <table class="grid" id="dgvKPIs">
+            <colgroup>
+              <col style="width:13%"><col style="width:19%"><col style="width:14%">
+              <col style="width:6%"><col style="width:7%"><col style="width:16%">
+              <col style="width:12%"><col style="width:13%">
+            </colgroup>
+            <thead>
+              <tr>
+                <th>Sección</th>
+                <th>Tarea / Indicador</th>
+                <th>Fecha de entrega / Regla</th>
+                <th class="num">Pond.</th>
+                <th class="ctr">Errores</th>
+                <th>Cumplimiento</th>
+                <th>Observaciones</th>
+                <th>Evidencia</th>
+              </tr>
+            </thead>
+            <tbody id="gridBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ===== Avances ===== -->
+      <section class="tab-page panel" id="tab-analytics">
+        <div class="analytics" id="pnlAnalyticsContainer"></div>
+      </section>
+
+      <!-- ===== Cronograma ===== -->
+      <section class="tab-page" id="tab-cronograma">
+        <div class="cron-head panel">
+          <div>
+            <h2 class="panel-title" style="margin:0">Programación de entregas</h2>
+            <p class="hint" style="margin:2px 0 0">Calendario del mes actual por subsección. Toca un día marcado para ver sus entregas.</p>
+          </div>
+          <div class="group">
+            <button class="btn purple" id="btnExportarCronogramaExcel">Descargar en Excel (.xls)</button>
+            <button class="btn blue" id="btnExportarCronogramaPDF">Generar reporte PDF para entrega</button>
+          </div>
+        </div>
+        <div class="cron-wrap" id="pnlCronogramaContainer"></div>
+      </section>
     </div>
-
-    <div class="crud">
-      <button class="btn green" id="btnAgregarActividad">➕ Agregar Actividad</button>
-      <button class="btn" id="btnModificarActividad">✏️ Modificar</button>
-      <button class="btn red" id="btnEliminarActividad">🗑️ Eliminar</button>
-      <button class="btn purple" id="btnAgregarSeccion">➕ Nueva Sección</button>
-      <button class="btn" id="btnEliminarSeccion">➖ Quitar Sección</button>
-      <button class="btn" id="btnEditarSeccion">⚖️ Ponderación Sección</button>
-    </div>
-
-    <div class="grid-wrap">
-      <table class="grid" id="dgvKPIs">
-        <colgroup>
-          <col style="width:15.1%"><col style="width:20.2%"><col style="width:15.1%">
-          <col style="width:6.7%"><col style="width:6.7%"><col style="width:7.6%">
-          <col style="width:13.4%"><col style="width:15.2%">
-        </colgroup>
-        <thead>
-          <tr>
-            <th>Sección</th>
-            <th>Tarea / Indicador</th>
-            <th>Fecha de Entrega / Regla</th>
-            <th class="num">Pond.</th>
-            <th class="ctr">Errores</th>
-            <th class="num">Cumpl.</th>
-            <th>Observaciones</th>
-            <th>Evidencia Fotográfica</th>
-          </tr>
-        </thead>
-        <tbody id="gridBody"></tbody>
-      </table>
-    </div>
-  </section>
-
-  <!-- ===== Visualización de avances ===== -->
-  <section class="tab-page" id="tab-analytics">
-    <div class="analytics" id="pnlAnalyticsContainer"></div>
-  </section>
-
-  <!-- ===== Cronograma ===== -->
-  <section class="tab-page" id="tab-cronograma">
-    <div class="cron-head">
-      <span class="ttl">PROGRAMACIÓN DE ENTREGAS</span>
-      <button class="btn purple" id="btnExportarCronogramaExcel">📗 Descargar en Excel (.xls)</button>
-      <button class="btn blue" id="btnExportarCronogramaPDF">📕 Generar Reporte PDF para Entrega</button>
-    </div>
-    <div class="cron-wrap" id="pnlCronogramaContainer"></div>
-  </section>
-
   </div>
+</div>
 
-  <div id="modalRoot"></div>
+<div id="modalRoot"></div>
 
-  <!-- Librería para generar los PDF (se carga desde CDN) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script>
+<!-- Librería para generar los PDF (se carga desde CDN) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
 'use strict';
 /* =====================================================================
    Datos originales de cada área (equivalente a CargarDatosXxx del VB).
@@ -1212,9 +1344,9 @@ function buildCronogramaPdf(d) {
 
 /* ---------- Colores (idénticos al original) ---------- */
 const COL = {
-  bg: '#0f1117', card: '#1a1d26', border: '#2a2e3d', header: '#202430',
-  text: '#f0f2f5', muted: '#828899',
-  blue: '#0a84ff', purple: '#af52de', green: '#30d158', orange: '#ff9f0a', red: '#ff453a'
+  bg: '#f2f4f7', card: '#ffffff', border: '#dde3eb', header: '#f7f9fb',
+  text: '#1c2b3c', muted: '#667689',
+  blue: '#1f5be0', purple: '#7447cc', green: '#1b9e5b', orange: '#d98a0b', red: '#d2453f'
 };
 const COLORES_SECCIONES = [COL.blue, COL.green, COL.orange, COL.purple, COL.red];
 
@@ -1423,13 +1555,13 @@ function modal(build, opciones) {
   });
 }
 
-const ICONOS = { info: 'ℹ️', warn: '⚠️', error: '⛔', question: '❓' };
+const ICONOS = { info: 'i', warn: '!', error: '×', question: '?' };
 
 function showMessage(texto, titulo, icono) {
   return modal(function (box, cerrar) {
     box.innerHTML =
-      '<div class="dlg-head"><span class="dlg-icon">' + (ICONOS[icono] || ICONOS.info) + '</span>' +
-      '<h3 class="dlg-title" style="margin:0">' + esc(titulo || '') + '</h3></div>' +
+      '<div class="dlg-head"><span class="dlg-icon ic-' + (icono || 'info') + '">' + (ICONOS[icono] || ICONOS.info) + '</span>' +
+      '<h3 class="dlg-title">' + esc(titulo || '') + '</h3></div>' +
       '<p class="dlg-text">' + esc(texto) + '</p>' +
       '<div class="dlg-btns"><button class="btn blue" autofocus>Aceptar</button></div>';
     box.querySelector('button').onclick = function () { cerrar(true); };
@@ -1439,8 +1571,8 @@ function showMessage(texto, titulo, icono) {
 function showConfirm(texto, titulo, icono) {
   return modal(function (box, cerrar) {
     box.innerHTML =
-      '<div class="dlg-head"><span class="dlg-icon">' + (ICONOS[icono] || ICONOS.question) + '</span>' +
-      '<h3 class="dlg-title" style="margin:0">' + esc(titulo || '') + '</h3></div>' +
+      '<div class="dlg-head"><span class="dlg-icon ic-' + (icono || 'question') + '">' + (ICONOS[icono] || ICONOS.question) + '</span>' +
+      '<h3 class="dlg-title">' + esc(titulo || '') + '</h3></div>' +
       '<p class="dlg-text">' + esc(texto) + '</p>' +
       '<div class="dlg-btns"><button class="btn green" id="cfSi" autofocus>Sí</button>' +
       '<button class="btn" id="cfNo">No</button></div>';
@@ -1616,6 +1748,7 @@ function guardarCambiosInstantaneos() {
 
     guardarActividadesExtra(areaActual);
     localStorage.setItem(DB_KEY, JSON.stringify(db));
+    if (typeof renderSidebar === 'function' && $('#navDirs')) renderSidebar();
   } catch (e) { /* igual que el original: se ignora */ }
 }
 
@@ -1748,6 +1881,7 @@ function setupArea(area, desdeArchivo) {
   if (!desdeArchivo) aplicarCalificacionesGuardadas();
   calcularKPIsGlobales();
   aplicarFiltrosGrid();
+  actualizarEncabezado();
 }
 
 function llenarComboSecciones(seleccionar) {
@@ -1763,18 +1897,57 @@ function llenarComboSecciones(seleccionar) {
    Tarjetas superiores
    ===================================================================== */
 function reconstruirCardsUI() {
-  pnlCards.innerHTML = '';
-  secciones.forEach(function (s, i) {
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.innerHTML = '<div class="card-title">' + esc(s.nombre) + '<br>(' + pct0(s.pond) + ')</div>' +
-      '<div class="card-val" id="lblValSec_' + i + '">0.0%</div>';
-    pnlCards.appendChild(card);
+  if (secciones.length === 0) {
+    pnlCards.innerHTML = '<p class="empty">' + (cmbArea.value
+      ? 'Esta área aún no tiene subsecciones. Crea la primera con «Nueva sección».'
+      : 'Esta dirección aún no tiene áreas. Crea la primera desde el menú lateral.') + '</p>';
+    return;
+  }
+  pnlCards.innerHTML = secciones.map(function (s, i) {
+    return '<div class="meter"><div class="meter-name">' + esc(s.nombre) + '<small>peso ' + pct0(s.pond) + '</small></div>' +
+      '<div class="meter-val" id="lblValSec_' + i + '">0.0%</div>' +
+      '<div class="meter-bar"><i id="barSec_' + i + '"></i></div></div>';
+  }).join('');
+}
+
+/* Medidor tipo velocímetro (semicírculo). v = null muestra "sin datos". */
+function gaugeSvg(v, grande) {
+  const R = 80, cx = 100, cy = 100;
+  const color = v === null ? COL.border : colorPct(v);
+  const pto = function (f, r) {
+    const a = Math.PI * (1 - f);
+    return [cx + r * Math.cos(a), cy - r * Math.sin(a)];
+  };
+  const arco = 'M 20 100 A 80 80 0 0 1 180 100';
+  let t = '';
+  [0.7, 0.9].forEach(function (f) {
+    const a = pto(f, R - 13), b = pto(f, R + 13), l = pto(f, R + 22);
+    t += '<line class="tick" x1="' + a[0].toFixed(1) + '" y1="' + a[1].toFixed(1) + '" x2="' + b[0].toFixed(1) + '" y2="' + b[1].toFixed(1) + '"/>' +
+      '<text class="tick-lbl" x="' + l[0].toFixed(1) + '" y="' + (l[1] + 3).toFixed(1) + '" text-anchor="middle">' + Math.round(f * 100) + '</text>';
   });
-  const g = document.createElement('div');
-  g.className = 'card';
-  g.innerHTML = '<div class="card-title blue">CUMPLIMIENTO<br>GLOBAL</div><div class="card-val global" id="lblValGlobal">0.0%</div><div class="card-sub" id="lblPeso"></div>';
-  pnlCards.appendChild(g);
+  const txt = v === null ? 'Sin datos' : pct1(v);
+  const tam = v === null ? 22 : (grande ? 36 : 34);
+  return '<svg class="gauge" viewBox="-14 0 228 124" role="img" aria-label="Cumplimiento ' + esc(txt) + '">' +
+    '<path class="track" d="' + arco + '" fill="none" stroke-width="16" stroke-linecap="round" pathLength="100"/>' +
+    (v === null ? '' : '<path d="' + arco + '" fill="none" stroke="' + color + '" stroke-width="16" stroke-linecap="round" pathLength="100" stroke-dasharray="' + (clamp01(v) * 100).toFixed(2) + ' 100"/>') +
+    t +
+    '<text class="num-big" x="100" y="92" text-anchor="middle" font-size="' + tam + '" fill="' + (v === null ? COL.muted : color) + '">' + esc(txt) + '</text>' +
+    '<text class="sub" x="100" y="112" text-anchor="middle">cumplimiento global</text></svg>';
+}
+function setGauge(v) {
+  const g = $('#gaugeMain');
+  if (g) g.innerHTML = gaugeSvg(v, true);
+}
+
+function actualizarEncabezado() {
+  const t = $('#areaTitle'), c = $('#areaCrumb');
+  const sinArea = !cmbArea.value;
+  if (t) t.textContent = sinArea ? dirActual : cmbArea.value;
+  if (c) c.textContent = sinArea ? 'Dirección' : 'Dirección · ' + dirActual;
+  $('#appView').classList.toggle('sin-area', sinArea);
+  $('#emptyState').hidden = !sinArea;
+  const q = $('#btnQuitarArea');
+  if (q) q.hidden = !cmbArea.value || esAreaBase(dirActual, cmbArea.value);
 }
 
 /* =====================================================================
@@ -1783,8 +1956,7 @@ function reconstruirCardsUI() {
 function calcularKPIsGlobales() {
   if (secciones.length === 0) {
     valGlobal = 0;
-    const l0 = $('#lblValGlobal');
-    if (l0) { l0.textContent = '0.0%'; l0.style.color = COL.red; }
+    setGauge(null);
     const pw0 = $('#lblPeso');
     if (pw0) pw0.textContent = '';
     renderGrid();
@@ -1811,7 +1983,9 @@ function calcularKPIsGlobales() {
     sec.valor = suma;
     valGlobal += sec.valor * sec.pond;
     const lbl = $('#lblValSec_' + i);
-    if (lbl) lbl.textContent = pct1(sec.valor);
+    if (lbl) { lbl.textContent = pct1(sec.valor); lbl.style.color = colorPct(sec.valor); }
+    const bar = $('#barSec_' + i);
+    if (bar) { bar.style.width = Math.round(clamp01(sec.valor) * 100) + '%'; bar.style.background = colorPct(sec.valor); }
   });
 
   // En áreas creadas a mano (sin secciones originales) el global se normaliza al peso asignado
@@ -1821,9 +1995,7 @@ function calcularKPIsGlobales() {
   const pw = $('#lblPeso');
   if (pw) pw.textContent = (!hayBase && Math.abs(sumaPond - 1) > 0.0001) ? 'Peso asignado: ' + pct0(sumaPond) : '';
 
-  const lg = $('#lblValGlobal');
-  lg.textContent = pct1(valGlobal);
-  lg.style.color = valGlobal >= 0.9 ? COL.green : (valGlobal >= 0.7 ? COL.orange : COL.red);
+  setGauge(valGlobal);
 
   renderGrid();
   generarGraficosAnaliticos();
@@ -1864,19 +2036,22 @@ function renderGrid() {
 
   gridBody.innerHTML = vis.map(function (r) {
     const cv = num(r.cumpl, 1);
+    const ev = num(r.err, 0);
     const evTxt = String(r.evid || '').trim();
     const evCell = evTxt
       ? '<a class="ev-link" title="Doble clic para abrir">' + esc(evTxt) + '</a>'
-      : '<span class="ev-empty">📷 Doble clic para adjuntar foto...</span>';
-    return '<tr data-id="' + r._id + '" class="' + claseCumpl(cv) + (r === selectedRow ? ' sel' : '') + '">' +
+      : '<span class="muted" title="Doble clic para adjuntar una foto">Sin foto</span>';
+    const cl = claseCumpl(cv);
+    return '<tr data-id="' + r._id + '" class="' + cl + (r === selectedRow ? ' sel' : '') + '">' +
       '<td>' + esc(r.sec) + '</td>' +
       '<td>' + esc(r.tarea) + '</td>' +
       '<td class="ed c-regla" data-col="regla">' + esc(r.regla) + '</td>' +
       '<td class="num">' + pct1(num(r.pond, 0)) + '</td>' +
-      '<td class="ed ctr' + (num(r.err, 0) > 0 ? ' neg' : '') + '" data-col="err">' + pct1(num(r.err, 0)) + '</td>' +
-      '<td class="ed num cumpl-' + claseCumpl(cv) + '" data-col="cumpl">' + pct1(cv) + '</td>' +
+      '<td class="ed ctr' + (ev > 0 ? ' err-on' : ' muted') + '" data-col="err">' + pct1(ev) + '</td>' +
+      '<td class="ed" data-col="cumpl"><div class="cum"><b class="cumpl-' + cl + '">' + pct1(cv) + '</b>' +
+      '<i><u style="width:' + Math.round(clamp01(cv) * 100) + '%;background:' + colorPct(cv) + '"></u></i></div></td>' +
       '<td class="ed" data-col="obs">' + esc(r.obs) + '</td>' +
-      '<td class="ed" data-col="ev">' + evCell + '<button class="ev-edit" title="Editar ruta / URL de la evidencia">✎</button></td>' +
+      '<td class="ed" data-col="ev">' + evCell + '<button class="ev-edit" title="Editar ruta o URL de la evidencia">Editar</button></td>' +
       '</tr>';
   }).join('');
 }
@@ -2518,7 +2693,7 @@ function generarVistaCronogramaVisual() {
 
     const card = document.createElement('div');
     card.className = 'cal-card';
-    card.innerHTML = '<div class="cal-title" style="color:' + color + '">' + esc(sec.nombre) + '</div><div class="cal-grid">' + celdas + '</div>';
+    card.innerHTML = '<div class="cal-title"><i style="background:' + color + '"></i>' + esc(sec.nombre) + '</div><div class="cal-grid">' + celdas + '</div>';
     cont.appendChild(card);
   });
 }
@@ -2586,7 +2761,7 @@ function generarGraficosAnaliticos() {
     }
 
     const dentro = v >= 0.98;
-    s += T(pct0(v), centerX.toFixed(2), (dentro ? barTop + 2 : barTop - 15).toFixed(2), 7.5, 700, dentro ? '#000' : colBarra, 'middle');
+    s += T(pct0(v), centerX.toFixed(2), (dentro ? barTop + 2 : barTop - 15).toFixed(2), 7.5, 700, dentro ? '#fff' : colBarra, 'middle');
 
     const corto = nombre.length > 28 ? nombre.substring(0, 25) + '...' : nombre;
     s += '<g transform="translate(' + centerX.toFixed(2) + ',' + (marginYTop + heightXY + 10) + ') rotate(45)">' +
@@ -2635,20 +2810,25 @@ function vaciarVista() {
   reconstruirCardsUI();
   llenarComboSecciones();
   calcularKPIsGlobales();
+  actualizarEncabezado();
 }
 
 function mostrarApp() {
   $('#home').hidden = true;
   $('#appView').hidden = false;
-  $('#btnHome').hidden = false;
+  $('#btnHome').classList.remove('on');
+  cerrarMenu();
 }
 
 function mostrarHome() {
   if (!$('#appView').hidden && cmbArea.value) guardarCambiosInstantaneos();
-  renderHome();
   $('#appView').hidden = true;
-  $('#btnHome').hidden = true;
   $('#home').hidden = false;
+  $('#btnHome').classList.add('on');
+  renderHome();
+  renderSidebar();
+  cerrarMenu();
+  window.scrollTo(0, 0);
 }
 
 function abrirArea(dir, area) {
@@ -2659,6 +2839,55 @@ function abrirArea(dir, area) {
   selectedRow = null;
   mostrarApp();
   if (cmbArea.value) setupArea(cmbArea.value, false); else vaciarVista();
+  actualizarEncabezado();
+  renderSidebar();
+  window.scrollTo(0, 0);
+}
+
+function cerrarMenu() {
+  const sd = $('#side');
+  if (sd) sd.classList.remove('open');
+  const mb = $('#btnMenu');
+  if (mb) mb.setAttribute('aria-expanded', 'false');
+}
+
+/* Menú lateral: direcciones con su semáforo y, en la activa, sus áreas */
+function renderSidebar() {
+  const nav = $('#navDirs');
+  if (!nav) return;
+  const enApp = !$('#appView').hidden;
+  let h = '';
+  listaDirecciones().forEach(function (dir) {
+    const areas = areasDeDireccion(dir);
+    const res = areas.map(function (a) { return { a: a, r: resumenArea(dir, a) }; });
+    const con = res.filter(function (x) { return x.r.hasData; });
+    const prom = con.length ? con.reduce(function (t, x) { return t + x.r.global; }, 0) / con.length : null;
+    const activa = enApp && dir === dirActual;
+
+    h += '<div class="nav-dir' + (activa ? ' open' : '') + '"><button class="nav-dir-btn" data-dir="' + esc(dir) + '">' +
+      '<span class="nav-dir-name">' + esc(dir) + '</span>' +
+      '<span class="chip">' + (prom === null ? '—' : Math.round(prom * 100) + '%') + '</span></button>';
+    if (activa) {
+      h += '<div class="nav-areas">';
+      res.forEach(function (x) {
+        const v = x.r.hasData ? x.r.global : null;
+        h += '<button class="nav-area' + (x.a === cmbArea.value ? ' on' : '') + '" data-dir="' + esc(dir) + '" data-area="' + esc(x.a) + '">' +
+          '<i class="dot" style="background:' + (v === null ? '#5b7391' : colorPct(v)) + '"></i><span>' + esc(x.a) + '</span>' +
+          '<em>' + (v === null ? '—' : Math.round(v * 100) + '%') + '</em></button>';
+      });
+      h += '<button class="nav-add" data-nuevaarea="1">+ Nueva área</button></div>';
+    }
+    h += '</div>';
+  });
+  nav.innerHTML = h;
+}
+
+function clickSidebar(e) {
+  const area = e.target.closest('.nav-area');
+  if (area) { abrirArea(area.dataset.dir, area.dataset.area); return; }
+  if (e.target.closest('[data-nuevaarea]')) { btnNuevaArea_Click(); return; }
+  const dir = e.target.closest('.nav-dir-btn');
+  if (dir) abrirArea(dir.dataset.dir, null);
 }
 
 /* Resumen de un área sin tocar la vista actual (para la pantalla de inicio) */
@@ -2729,13 +2958,13 @@ function renderHome() {
     const areas = areasDeDireccion(dir);
     const res = areas.map(function (a) { return { a: a, r: resumenArea(dir, a) }; });
     const conDatos = res.filter(function (x) { return x.r.hasData; });
-    const prom = conDatos.length ? conDatos.reduce(function (s, x) { return s + x.r.global; }, 0) / conDatos.length : null;
+    const prom = conDatos.length ? conDatos.reduce(function (t, x) { return t + x.r.global; }, 0) / conDatos.length : null;
     const esBase = DIRECCIONES_BASE.indexOf(dir) >= 0;
 
-    html += '<article class="dir-card">' +
-      '<div class="dir-head"><div><div class="dir-name">' + esc(dir) + '</div>' +
-      '<div class="dir-sub">' + areas.length + (areas.length === 1 ? ' área' : ' áreas') + '</div></div>' +
-      '<div class="dir-score' + (prom === null ? ' nd' : '') + '" style="color:' + (prom === null ? COL.muted : colorPct(prom)) + '">' + (prom === null ? 'Sin datos' : pct1(prom)) + '</div></div>';
+    html += '<article class="dir-card"><div class="dir-top"><div>' + gaugeSvg(prom, false) + '</div>' +
+      '<div><div class="dir-name">' + esc(dir) + '</div>' +
+      '<div class="dir-sub">' + areas.length + (areas.length === 1 ? ' área' : ' áreas') +
+      (conDatos.length && conDatos.length < areas.length ? ' · ' + (areas.length - conDatos.length) + ' sin datos' : '') + '</div></div></div>';
 
     if (res.length === 0) {
       html += '<p class="dir-empty">Aún no tiene áreas. Ábrela para crear la primera y empezar a evaluar.</p>';
@@ -2753,10 +2982,10 @@ function renderHome() {
     }
 
     html += '<div class="dir-foot"><button class="btn blue" data-open="' + esc(dir) + '">Abrir dirección</button>' +
-      (esBase ? '' : '<button class="btn" data-del="' + esc(dir) + '">Quitar</button>') + '</div></article>';
+      (esBase ? '' : '<button class="btn red" data-del="' + esc(dir) + '">Quitar</button>') + '</div></article>';
   });
 
-  html += '<button class="dir-card dir-new" data-newdir="1"><span class="plus">＋</span><span>Nueva dirección</span></button>';
+  html += '<button class="dir-card dir-new" data-newdir="1"><span class="plus">+</span><span>Nueva dirección</span></button>';
   cont.innerHTML = html;
 }
 
@@ -2820,6 +3049,7 @@ async function nuevaDireccion() {
   db['__Direcciones'] = JSON.stringify(c);
   guardarDB();
   renderHome();
+  renderSidebar();
 }
 
 async function quitarDireccion(dir) {
@@ -2833,6 +3063,7 @@ async function quitarDireccion(dir) {
   guardarDB();
   if (dirActual === dir) { dirActual = DIR_ADMIN; llenarDirecciones(); llenarAreas(); }
   renderHome();
+  renderSidebar();
 }
 
 async function btnNuevaArea_Click() {
@@ -2852,6 +3083,7 @@ async function btnNuevaArea_Click() {
   llenarAreas(nombre);
   selectedRow = null;
   setupArea(nombre, false);
+  renderSidebar();
   await showMessage('Área creada. Ahora agrega su primera sección con «Nueva Sección».', 'Área creada', 'info');
 }
 
@@ -2873,6 +3105,7 @@ async function btnQuitarArea_Click() {
 
   llenarAreas();
   if (cmbArea.value) setupArea(cmbArea.value, false); else vaciarVista();
+  renderSidebar();
 }
 
 async function btnEditarSeccion_Click() {
@@ -2968,8 +3201,14 @@ function inicializar() {
   // Nuevos controles: direcciones, áreas y ponderación de secciones
   cmbDir.addEventListener('change', function () { abrirArea(cmbDir.value, null); });
   $('#btnHome').onclick = mostrarHome;
-  $('#btnNuevaArea').onclick = btnNuevaArea_Click;
   $('#btnQuitarArea').onclick = btnQuitarArea_Click;
+  $('#btnCrearPrimeraArea').onclick = btnNuevaArea_Click;
+  $('#navNuevaDir').onclick = nuevaDireccion;
+  $('#navDirs').addEventListener('click', clickSidebar);
+  $('#btnMenu').onclick = function () {
+    const abierto = $('#side').classList.toggle('open');
+    $('#btnMenu').setAttribute('aria-expanded', abierto ? 'true' : 'false');
+  };
   $('#btnEditarSeccion').onclick = btnEditarSeccion_Click;
   $('#homeGrid').addEventListener('click', clickHome);
 
@@ -2978,6 +3217,6 @@ function inicializar() {
 
 document.addEventListener('DOMContentLoaded', inicializar);
 
-  </script>
+</script>
 </body>
 </html>
