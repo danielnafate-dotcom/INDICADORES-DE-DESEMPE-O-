@@ -476,6 +476,51 @@ table.grid { width: 100%; border-collapse: collapse; table-layout: fixed; min-wi
 #appView.sin-area .summary, #appView.sin-area .tabs, #appView.sin-area .tab-page { display: none !important; }
 #appView.sin-area .area-actions { display: none; }
 
+/* ---------- Mes evaluado ---------- */
+.period-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 12px; }
+.period-pick { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.period-pick select {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 7px 10px;
+  color: var(--text);
+  font-weight: 600;
+}
+.period-dates { font-size: 12.5px; color: var(--muted); }
+.period-dates b { color: var(--text); font-weight: 600; }
+#appView.sin-area .period-bar { display: none; }
+
+.grid .resp { font-size: 12px; color: var(--muted); margin-top: 3px; font-weight: 500; }
+
+/* ---------- Meses evaluados ---------- */
+.meses-chart { overflow-x: auto; margin: 4px 0 18px; padding-bottom: 4px; }
+.meses-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
+table.meses { width: 100%; border-collapse: collapse; min-width: 720px; }
+.meses th { text-align: left; font-size: 12px; font-weight: 700; color: var(--muted); background: #f7f9fb; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.meses td { padding: 10px 12px; border-bottom: 1px solid var(--line-2); vertical-align: middle; font-variant-numeric: tabular-nums; }
+.meses tbody tr:last-child td { border-bottom: 0; }
+.meses tr.on td { background: var(--accent-soft); }
+.meses .cum { display: grid; grid-template-columns: 58px 1fr; align-items: center; gap: 8px; min-width: 150px; }
+.meses .cum b { font-family: var(--display); font-weight: 800; font-size: 13.5px; }
+.meses .cum i { display: block; height: 6px; border-radius: 6px; background: var(--line-2); overflow: hidden; }
+.meses .cum u { display: block; height: 100%; border-radius: 6px; text-decoration: none; }
+.badge { display: inline-block; margin-left: 8px; font-size: 11px; font-weight: 700; color: var(--accent); background: #fff; border: 1px solid #bcd0ff; border-radius: 99px; padding: 1px 8px; }
+.empty { color: var(--muted); font-size: 13.5px; }
+
+/* ---------- Correo ---------- */
+.mail-panel { padding: 16px 18px; margin: 14px 0 4px; }
+.mail-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px 18px; margin-bottom: 10px; }
+.mail-list { display: flex; flex-direction: column; }
+.mail-row { display: grid; grid-template-columns: 38px minmax(0, 1fr) auto auto; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line-2); }
+.avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--ink); color: #fff; display: flex; align-items: center; justify-content: center; font-family: var(--display); font-weight: 800; }
+.mail-who { min-width: 0; display: flex; flex-direction: column; }
+.mail-who span { color: var(--muted); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mail-n { color: var(--muted); font-size: 12.5px; white-space: nowrap; }
+.mail-warn { color: var(--warn); font-weight: 600; font-size: 12.5px; margin: 10px 0 0; }
+.dlg textarea.dlg-input { resize: vertical; font: inherit; line-height: 1.45; }
+@media (max-width: 640px) { .mail-row { grid-template-columns: 38px minmax(0, 1fr); } .mail-n { display: none; } .mail-row .btn { grid-column: 1 / -1; } }
+
 </style>
 </head>
 <body>
@@ -519,6 +564,13 @@ table.grid { width: 100%; border-collapse: collapse; table-layout: fixed; min-wi
         <div>
           <div class="crumb" id="areaCrumb">Dirección</div>
           <h1 id="areaTitle">Área</h1>
+          <div class="period-bar">
+            <label class="period-pick">Mes evaluado
+              <select id="cmbPeriodo"></select>
+            </label>
+            <button class="btn" id="btnNuevoMes">Otro mes…</button>
+            <span class="period-dates" id="areaFechas"></span>
+          </div>
         </div>
         <div class="area-actions" id="areaActions">
           <button class="btn blue" id="btnCalcular">Recalcular</button>
@@ -578,6 +630,7 @@ table.grid { width: 100%; border-collapse: collapse; table-layout: fixed; min-wi
         <button class="tab active" role="tab" data-tab="captura">Captura</button>
         <button class="tab" role="tab" data-tab="analytics">Avances</button>
         <button class="tab" role="tab" data-tab="cronograma">Cronograma</button>
+        <button class="tab" role="tab" data-tab="meses">Meses evaluados</button>
       </nav>
 
       <!-- ===== Captura ===== -->
@@ -642,14 +695,31 @@ table.grid { width: 100%; border-collapse: collapse; table-layout: fixed; min-wi
         <div class="cron-head panel">
           <div>
             <h2 class="panel-title" style="margin:0">Programación de entregas</h2>
-            <p class="hint" style="margin:2px 0 0">Calendario del mes actual por subsección. Toca un día marcado para ver sus entregas.</p>
+            <p class="hint" style="margin:2px 0 0">Calendario de <b id="cronMes"></b> por subsección. Toca un día marcado para ver sus entregas.</p>
           </div>
           <div class="group">
             <button class="btn purple" id="btnExportarCronogramaExcel">Descargar en Excel (.xls)</button>
             <button class="btn blue" id="btnExportarCronogramaPDF">Generar reporte PDF para entrega</button>
           </div>
         </div>
+        <div class="panel mail-panel">
+          <div class="mail-head">
+            <div>
+              <h2 class="panel-title" style="margin:0">Enviar por correo</h2>
+              <p class="hint" style="margin:2px 0 0">Cada responsable recibe solo las actividades que tiene asignadas. El responsable y su correo se asignan en Captura, con «Modificar».</p>
+            </div>
+            <button class="btn" id="btnCorreoCompleto">Enviar cronograma completo…</button>
+          </div>
+          <div class="mail-list" id="mailList"></div>
+        </div>
         <div class="cron-wrap" id="pnlCronogramaContainer"></div>
+      </section>
+
+      <!-- ===== Meses evaluados ===== -->
+      <section class="tab-page panel" id="tab-meses">
+        <h2 class="panel-title">Meses evaluados</h2>
+        <p class="hint" style="margin-top:-6px">Cada mes guarda la fecha en que se empezó a modificar y la de la última modificación. Abre un mes para consultarlo o seguir editándolo.</p>
+        <div id="pnlMesesContainer"></div>
       </section>
     </div>
   </div>
@@ -1031,7 +1101,7 @@ function buildReportePdf(d) {
       P.str('Evaluado: ' + nomEvaluado + ' (' + pstEvaluado + ')   |   Evaluador: ' + nomEvaluador + ' (' + pstEvaluador + ')',
         leftMargin, y, { size: 8, color: PC.muted });
       y += 15;
-      P.str('Fecha de Emisión: ' + d.fechaEmision, leftMargin, y, { size: 8, color: PC.muted });
+      P.str('Mes evaluado: ' + (d.periodo || '') + '   |   Fecha de Emisión: ' + d.fechaEmision, leftMargin, y, { size: 8, color: PC.muted });
       y += 16;
 
       P.line(leftMargin, y, rightMargin, y, PC.blue, 2);
@@ -1199,7 +1269,7 @@ function buildCronogramaPdf(d) {
   y += 26;
 
   const evaluadoNom = d.evaluado.trim() === '' ? 'SECTOR / ÁREA EVALUADA' : d.evaluado.trim().toUpperCase();
-  P.str('Responsable: ' + evaluadoNom + '   |   Fecha de Emisión: ' + d.fechaEmision, leftMargin, y, { size: 8.5, color: textMuted });
+  P.str('Responsable: ' + evaluadoNom + '   |   Mes: ' + (d.periodo || '') + '   |   Fecha de Emisión: ' + d.fechaEmision, leftMargin, y, { size: 8.5, color: textMuted });
   y += 18;
 
   P.line(leftMargin, y, rightMargin, y, navy, 2.5);
@@ -1440,7 +1510,8 @@ function nombreSeguro(t) {
 function crearFila(sec, tarea, regla, pond, err, cumpl, obs, evid, evImg) {
   return {
     _id: ++rowSeq, sec: sec, tarea: tarea, regla: regla,
-    pond: pond, err: err, cumpl: cumpl, obs: obs || '', evid: evid || '', evImg: evImg || ''
+    pond: pond, err: err, cumpl: cumpl, obs: obs || '', evid: evid || '', evImg: evImg || '',
+    respNombre: '', respCorreo: ''
   };
 }
 
@@ -1581,6 +1652,12 @@ function showConfirm(texto, titulo, icono) {
   }, { width: 460, cancelValue: false });
 }
 
+function listaCorreos(txt) { return String(txt || '').split(/[;,\s]+/).map(function (x) { return x.trim(); }).filter(Boolean); }
+function correosValidos(txt) {
+  const l = listaCorreos(txt);
+  return l.length > 0 && l.every(function (c) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c); });
+}
+
 function tryParseNum(texto) {
   const s = String(texto == null ? '' : texto).replace('%', '').trim().replace(/,/g, '.');
   if (s === '') return 0;
@@ -1589,7 +1666,7 @@ function tryParseNum(texto) {
 }
 
 /* FormDialogActividad */
-function dlgActividad(seccion, pTarea, pRegla, pPond, pErr, pCumpl, pObs, pEv, pEvImg) {
+function dlgActividad(seccion, pTarea, pRegla, pPond, pErr, pCumpl, pObs, pEv, pEvImg, pRespN, pRespC) {
   return modal(function (box, cerrar) {
     box.innerHTML =
       '<h3 class="dlg-title">Gestión de Actividad / Indicador</h3>' +
@@ -1601,6 +1678,8 @@ function dlgActividad(seccion, pTarea, pRegla, pPond, pErr, pCumpl, pObs, pEv, p
       '<label>Errores (0.0 a 1.0):</label><input id="d_err">' +
       '<label>Cumplimiento (0.0 a 1.0):</label><input id="d_cumpl">' +
       '<label>Observaciones:</label><input id="d_obs">' +
+      '<label>Responsable de la entrega:</label><input id="d_respn" placeholder="Nombre">' +
+      '<label>Correo del responsable:</label><input id="d_respc" type="text" inputmode="email" placeholder="nombre@empresa.com (varios: separa con coma)">' +
       '<label>Imagen de Evidencia:</label><div class="ev-row"><input id="d_ev"><button type="button" id="d_evbtn" title="Examinar…">...</button></div>' +
       '</div>' +
       '<div class="dlg-btns"><button class="btn green" id="d_ok">Guardar</button><button class="btn" id="d_cancel">Cancelar</button></div>';
@@ -1613,6 +1692,8 @@ function dlgActividad(seccion, pTarea, pRegla, pPond, pErr, pCumpl, pObs, pEv, p
     g('#d_cumpl').value = String(pCumpl);
     g('#d_obs').value = pObs;
     g('#d_ev').value = pEv;
+    g('#d_respn').value = pRespN || '';
+    g('#d_respc').value = pRespC || '';
 
     let pendiente = null; // {nombre, data}
 
@@ -1629,6 +1710,12 @@ function dlgActividad(seccion, pTarea, pRegla, pPond, pErr, pCumpl, pObs, pEv, p
     };
     g('#d_cancel').onclick = function () { cerrar(null); };
     g('#d_ok').onclick = async function () {
+      const correos = g('#d_respc').value.trim();
+      if (correos && !correosValidos(correos)) {
+        await showMessage('El correo del responsable no es válido. Escribe uno como nombre@empresa.com (si son varios, sepáralos con coma).', 'Atención', 'warn');
+        g('#d_respc').focus();
+        return;
+      }
       const evTxt = g('#d_ev').value.trim();
       let evImg = '';
       if (pendiente && evTxt === pendiente.nombre) {
@@ -1645,7 +1732,9 @@ function dlgActividad(seccion, pTarea, pRegla, pPond, pErr, pCumpl, pObs, pEv, p
         cumpl: tryParseNum(g('#d_cumpl').value),
         obs: g('#d_obs').value.trim(),
         evid: evTxt,
-        evImg: evImg
+        evImg: evImg,
+        respNombre: g('#d_respn').value.trim(),
+        respCorreo: correos
       });
     };
   }, { width: 480, cancelValue: null });
@@ -1727,8 +1816,10 @@ function cargarBaseDeDatosGeneral() {
   } catch (e) { db = {}; }
 }
 
-function guardarCambiosInstantaneos() {
+function guardarCambiosInstantaneos(opt) {
   if (isLoadingData) return;
+  // navegacion:true = guardado automático sin que el usuario haya editado (no registra fechas)
+  const nav = !!(opt && opt.navegacion === true);
   try {
     const areaActual = cmbArea.value ? areaKey() : 'GENERAL';
 
@@ -1744,11 +1835,15 @@ function guardarCambiosInstantaneos() {
       db[keyBase + '|Observaciones'] = String(row.obs);
       db[keyBase + '|Evidencia'] = String(row.evid);
       db[keyBase + '|EvidenciaImg'] = String(row.evImg || '');
+      db[keyBase + '|RespNombre'] = String(row.respNombre || '');
+      db[keyBase + '|RespCorreo'] = String(row.respCorreo || '');
     });
 
     guardarActividadesExtra(areaActual);
+    if (!nav && cmbArea.value) guardarSnapshotPeriodo(areaActual);
     localStorage.setItem(DB_KEY, JSON.stringify(db));
-    if (typeof renderSidebar === 'function' && $('#navDirs')) renderSidebar();
+    if ($('#navDirs')) renderSidebar();
+    if (!nav && cmbArea.value) { llenarPeriodos(); actualizarFechas(); renderMeses(); }
   } catch (e) { /* igual que el original: se ignora */ }
 }
 
@@ -1770,6 +1865,8 @@ function aplicarCalificacionesGuardadas() {
       if (has('|Observaciones')) row.obs = db[k + '|Observaciones'];
       if (has('|Evidencia')) row.evid = db[k + '|Evidencia'];
       if (has('|EvidenciaImg')) row.evImg = db[k + '|EvidenciaImg'];
+      if (has('|RespNombre')) row.respNombre = db[k + '|RespNombre'];
+      if (has('|RespCorreo')) row.respCorreo = db[k + '|RespCorreo'];
     });
   } finally {
     isLoadingData = false;
@@ -1817,7 +1914,8 @@ function guardarActividadesExtra(area) {
   rows.forEach(function (row) {
     if (seccionesExtra.has(row.sec)) {
       const pond = isFinite(row.pond) ? row.pond : 0;
-      db[area + '_ActExtra_' + j] = [row.sec, limpiarTextoPersistencia(row.tarea), limpiarTextoPersistencia(row.regla), fmt4(pond)].join('~');
+      db[area + '_ActExtra_' + j] = [row.sec, limpiarTextoPersistencia(row.tarea), limpiarTextoPersistencia(row.regla), fmt4(pond),
+        limpiarTextoPersistencia(row.respNombre), limpiarTextoPersistencia(row.respCorreo)].join('~');
       j++;
     }
   });
@@ -1830,7 +1928,9 @@ function cargarActividadesExtraGuardadas(area) {
     if (p.length >= 4 && seccionesExtra.has(p[0])) {
       let pond = parseFloat(p[3]);
       if (!isFinite(pond)) pond = 0.1;
-      rows.push(crearFila(p[0], p[1], p[2], pond, 0.0, 1.0, '', ''));
+      const nf = crearFila(p[0], p[1], p[2], pond, 0.0, 1.0, '', '');
+      nf.respNombre = p[4] || ''; nf.respCorreo = p[5] || '';
+      rows.push(nf);
     }
     j++;
   }
@@ -1948,6 +2048,9 @@ function actualizarEncabezado() {
   $('#emptyState').hidden = !sinArea;
   const q = $('#btnQuitarArea');
   if (q) q.hidden = !cmbArea.value || esAreaBase(dirActual, cmbArea.value);
+  llenarPeriodos();
+  actualizarFechas();
+  renderMeses();
 }
 
 /* =====================================================================
@@ -1962,6 +2065,7 @@ function calcularKPIsGlobales() {
     renderGrid();
     const a0 = $('#pnlAnalyticsContainer'); if (a0) a0.innerHTML = '';
     const c0 = $('#pnlCronogramaContainer'); if (c0) c0.innerHTML = '';
+    renderCorreos();
     return;
   }
   valGlobal = 0;
@@ -2016,6 +2120,12 @@ function filasVisibles() {
 
 function aplicarFiltrosGrid() { renderGrid(); }
 
+function respHtml(r) {
+  const n = String(r.respNombre || '').trim(), c = String(r.respCorreo || '').trim();
+  if (!n && !c) return '';
+  return '<div class="resp" title="' + esc(c) + '">Responsable: ' + esc(n || c) + '</div>';
+}
+
 function claseCumpl(v) { return v >= 0.9 ? 'ok' : (v >= 0.7 ? 'warn' : 'bad'); }
 
 function renderGrid() {
@@ -2044,7 +2154,7 @@ function renderGrid() {
     const cl = claseCumpl(cv);
     return '<tr data-id="' + r._id + '" class="' + cl + (r === selectedRow ? ' sel' : '') + '">' +
       '<td>' + esc(r.sec) + '</td>' +
-      '<td>' + esc(r.tarea) + '</td>' +
+      '<td>' + esc(r.tarea) + respHtml(r) + '</td>' +
       '<td class="ed c-regla" data-col="regla">' + esc(r.regla) + '</td>' +
       '<td class="num">' + pct1(num(r.pond, 0)) + '</td>' +
       '<td class="ed ctr' + (ev > 0 ? ' err-on' : ' muted') + '" data-col="err">' + pct1(ev) + '</td>' +
@@ -2199,9 +2309,11 @@ async function btnAgregarActividad_Click() {
     return;
   }
   const secNombre = cmbSec.value;
-  const r = await dlgActividad(secNombre, '', '', 0.1, 0, 1.0, '', '', '');
+  const r = await dlgActividad(secNombre, '', '', 0.1, 0, 1.0, '', '', '', '', '');
   if (r) {
-    rows.push(crearFila(secNombre, r.tarea, r.regla, r.pond, r.err, r.cumpl, r.obs, r.evid, r.evImg));
+    const nf = crearFila(secNombre, r.tarea, r.regla, r.pond, r.err, r.cumpl, r.obs, r.evid, r.evImg);
+    nf.respNombre = r.respNombre; nf.respCorreo = r.respCorreo;
+    rows.push(nf);
     calcularKPIsGlobales();
     guardarCambiosInstantaneos();
   }
@@ -2213,10 +2325,11 @@ async function btnModificarActividad_Click() {
     return;
   }
   const dr = selectedRow;
-  const r = await dlgActividad(dr.sec, dr.tarea, dr.regla, num(dr.pond, 0), num(dr.err, 0), num(dr.cumpl, 1), dr.obs, dr.evid, dr.evImg);
+  const r = await dlgActividad(dr.sec, dr.tarea, dr.regla, num(dr.pond, 0), num(dr.err, 0), num(dr.cumpl, 1), dr.obs, dr.evid, dr.evImg, dr.respNombre, dr.respCorreo);
   if (r) {
     dr.tarea = r.tarea; dr.regla = r.regla; dr.pond = r.pond; dr.err = r.err;
     dr.cumpl = r.cumpl; dr.obs = r.obs; dr.evid = r.evid; dr.evImg = r.evImg;
+    dr.respNombre = r.respNombre; dr.respCorreo = r.respCorreo;
     calcularKPIsGlobales();
     guardarCambiosInstantaneos();
   }
@@ -2273,7 +2386,7 @@ async function btnAgregarSeccion_Click() {
   }
 
   // Una sección sin actividades daría 0% y bajaría el global: se captura la primera actividad de inmediato
-  const act = await dlgActividad(nombre, '', '', 1.0, 0, 1.0, '', '', '');
+  const act = await dlgActividad(nombre, '', '', 1.0, 0, 1.0, '', '', '', '', '');
   if (!act) {
     await showMessage('La sección no se creó: necesita al menos una actividad.', 'Atención', 'info');
     return;
@@ -2286,7 +2399,9 @@ async function btnAgregarSeccion_Click() {
   extras.push([nombre, pond]);
   escribirSeccionesExtra(area, extras);
 
-  rows.push(crearFila(nombre, act.tarea, act.regla, act.pond, act.err, act.cumpl, act.obs, act.evid, act.evImg));
+  const nfa = crearFila(nombre, act.tarea, act.regla, act.pond, act.err, act.cumpl, act.obs, act.evid, act.evImg);
+  nfa.respNombre = act.respNombre; nfa.respCorreo = act.respCorreo;
+  rows.push(nfa);
 
   refrescarUISecciones(nombre);
   guardarCambiosInstantaneos();
@@ -2352,7 +2467,7 @@ function aplicarSeccionesExtraDeArchivo() {
    ===================================================================== */
 async function btnCalcular_Click() {
   calcularKPIsGlobales();
-  guardarCambiosInstantaneos();
+  guardarCambiosInstantaneos({ navegacion: true });
   await showMessage('Métricas recalculadas y guardadas.', 'KPI Suite', 'info');
 }
 
@@ -2407,6 +2522,7 @@ async function btnGuardarLocal_Click() {
     L.push('[EVALUACION_HEADER]');
     L.push('Direccion=' + dirActual);
     L.push('Area=' + cmbArea.value);
+    L.push('Periodo=' + periodoActivo(areaKey()));
     L.push('Evaluado=' + limpiarCampoArchivo(txtNombreEvaluado.value));
     L.push('PuestoEvaluado=' + limpiarCampoArchivo(txtPuestoEvaluado.value));
     L.push('Evaluador=' + limpiarCampoArchivo(txtNombreEvaluador.value));
@@ -2419,7 +2535,7 @@ async function btnGuardarLocal_Click() {
     L.push('[KPI_ROWS]');
     const ids = [];
     rows.forEach(function (r) {
-      L.push([r.sec, r.tarea, r.regla, r.pond, r.err, r.cumpl, r.obs, r.evid, r.evImg || ''].map(limpiarCampoArchivo).join('|'));
+      L.push([r.sec, r.tarea, r.regla, r.pond, r.err, r.cumpl, r.obs, r.evid, r.evImg || '', r.respNombre || '', r.respCorreo || ''].map(limpiarCampoArchivo).join('|'));
       if (r.evImg && ids.indexOf(r.evImg) < 0) ids.push(r.evImg);
     });
 
@@ -2470,8 +2586,11 @@ async function btnCargarLocal_Click() {
       } else if (modo === 'rows') {
         const c = line.split('|');
         if (c.length >= 7) {
-          nuevas.push(crearFila(c[0], c[1], c[2], aNumeroEstricto(c[3]), aNumeroEstricto(c[4]), aNumeroEstricto(c[5]), c[6],
-            c.length >= 8 ? c[7] : '', c.length >= 9 ? c[8] : ''));
+          const nr = crearFila(c[0], c[1], c[2], aNumeroEstricto(c[3]), aNumeroEstricto(c[4]), aNumeroEstricto(c[5]), c[6],
+            c.length >= 8 ? c[7] : '', c.length >= 9 ? c[8] : '');
+          nr.respNombre = c.length >= 10 ? c[9] : '';
+          nr.respCorreo = c.length >= 11 ? c[10] : '';
+          nuevas.push(nr);
         }
       } else if (modo === 'evid') {
         const i = line.indexOf('=');
@@ -2490,6 +2609,7 @@ async function btnCargarLocal_Click() {
     }
     if (cab.Area && areasDeDireccion(dirActual).indexOf(cab.Area) >= 0) cmbArea.value = cab.Area;
     if (!cmbArea.value) throw new Error('Esta dirección no tiene áreas donde cargar la evaluación.');
+    if (periodoValido(cab.Periodo)) setPeriodoActivo(areaKey(), cab.Periodo);
     // Prepara secciones del área sin cargar filas por defecto (evita duplicados)
     setupArea(cmbArea.value, true);
 
@@ -2506,6 +2626,7 @@ async function btnCargarLocal_Click() {
     aplicarSeccionesExtraDeArchivo();
     calcularKPIsGlobales();
     guardarCambiosInstantaneos();
+    actualizarEncabezado();
     await showMessage('Evaluación cargada correctamente.', 'Éxito', 'info');
   } catch (ex) {
     isLoadingData = false;
@@ -2530,7 +2651,7 @@ function obtenerFilasOrdenadasPdf() {
 
 async function btnExportarPDF_Click() {
   const areaNom = areaLabel().replace(/ /g, '_');
-  const fname = 'Reporte_KPI_' + areaNom + '_' + stamp(true) + '.pdf';
+  const fname = 'Reporte_KPI_' + areaNom + '_' + periodoActivo(areaKey()) + '_' + stamp(true) + '.pdf';
   try {
     const doc = buildReportePdf({
       area: areaLabel(),
@@ -2539,6 +2660,7 @@ async function btnExportarPDF_Click() {
       evaluador: txtNombreEvaluador.value,
       puestoEvaluador: txtPuestoEvaluador.value,
       fechaEmision: fechaEmision(),
+      periodo: etiquetaPeriodo(periodoActivo(areaKey())),
       secciones: secciones,
       valGlobal: valGlobal,
       filas: obtenerFilasOrdenadasPdf()
@@ -2552,9 +2674,9 @@ async function btnExportarPDF_Click() {
 
 async function btnExportarCronogramaPDF_Click() {
   const areaNom = areaLabel().replace(/ /g, '_');
-  const fname = 'CRONOGRAMA_ENTREGAS_' + areaNom + '_' + stamp(true) + '.pdf';
+  const fname = 'CRONOGRAMA_ENTREGAS_' + areaNom + '_' + periodoActivo(areaKey()) + '_' + stamp(true) + '.pdf';
   try {
-    const now = new Date();
+    const pm = periodoAnioMes();
     const doc = buildCronogramaPdf({
       area: areaLabel(),
       evaluado: txtNombreEvaluado.value,
@@ -2562,8 +2684,9 @@ async function btnExportarCronogramaPDF_Click() {
       fechaEmision: fechaEmision(),
       secciones: secciones,
       actividadesPorDia: extraerActividadesPorDia,
-      anio: now.getFullYear(),
-      mes: now.getMonth()
+      anio: pm.anio,
+      mes: pm.mes,
+      periodo: etiquetaPeriodo(periodoActivo(areaKey()))
     });
     doc.save(fname);
     await showMessage('El Reporte Ejecutivo de Entregables en PDF se ha generado correctamente.', 'Exportación Completa', 'info');
@@ -2574,24 +2697,9 @@ async function btnExportarCronogramaPDF_Click() {
 
 async function btnExportarCronogramaExcel_Click() {
   const areaNom = areaLabel().replace(/ /g, '_');
-  const fname = 'CRONOGRAMA_' + areaNom + '_' + stamp(false) + '.xls';
+  const fname = 'CRONOGRAMA_' + areaNom + '_' + periodoActivo(areaKey()) + '_' + stamp(false) + '.xls';
   try {
-    const h = [];
-    h.push("<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:x='urn:schemas-microsoft-com:office:excel' xmlns='http://www.w3.org/TR/REC-html40'>");
-    h.push("<head><meta charset='utf-8'/><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets>");
-    h.push('<x:ExcelWorksheet><x:Name>' + esc(areaNom.replace(/[\\/?*\[\]:]/g, '_').substring(0, 31)) + '</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet>');
-    h.push('</x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body>');
-    h.push('<h2>CRONOGRAMA DE ENTREGAS - ÁREA: ' + esc(areaLabel()) + '</h2>');
-    h.push("<table border='1' style='border-collapse:collapse; font-family:Segoe UI, Arial; font-size:10pt;'>");
-    h.push("<tr style='background-color:#1F497D; color:white; font-weight:bold;'>");
-    h.push('<th>Subsección</th><th>Tarea / Indicador</th><th>Regla / Fecha de Entrega</th>');
-    h.push('</tr>');
-    rows.forEach(function (r) {
-      h.push('<tr><td><b>' + esc(r.sec) + '</b></td><td>' + esc(r.tarea) + "</td><td style='background-color:#EBF1F5;'><b>" + esc(r.regla) + '</b></td></tr>');
-    });
-    h.push('</table></body></html>');
-
-    descargar(fname, '\ufeff' + h.join('\r\n'), 'application/vnd.ms-excel;charset=utf-8');
+    descargar(fname, '\ufeff' + htmlCronogramaExcel(rows), 'application/vnd.ms-excel;charset=utf-8');
     await showMessage('El cronograma ha sido generado y descargado correctamente.', 'Descarga Exitosa', 'info');
   } catch (ex) {
     await showMessage('Error al exportar el cronograma: ' + ex.message, 'Error', 'error');
@@ -2660,9 +2768,11 @@ function generarVistaCronogramaVisual() {
   if (!cont) return;
   cont.innerHTML = '';
 
-  const now = new Date();
-  const mes = now.getMonth();
-  const anio = now.getFullYear();
+  const pm = periodoAnioMes();
+  const mes = pm.mes;
+  const anio = pm.anio;
+  const cm = $('#cronMes');
+  if (cm) cm.textContent = etiquetaPeriodo(anio + '-' + pad2(mes + 1));
   const diasEnMes = new Date(anio, mes + 1, 0).getDate();
   const diaInicio = new Date(anio, mes, 1).getDay();
   const letras = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
@@ -2696,6 +2806,7 @@ function generarVistaCronogramaVisual() {
     card.innerHTML = '<div class="cal-title"><i style="background:' + color + '"></i>' + esc(sec.nombre) + '</div><div class="cal-grid">' + celdas + '</div>';
     cont.appendChild(card);
   });
+  renderCorreos();
 }
 
 /* =====================================================================
@@ -2821,7 +2932,7 @@ function mostrarApp() {
 }
 
 function mostrarHome() {
-  if (!$('#appView').hidden && cmbArea.value) guardarCambiosInstantaneos();
+  if (!$('#appView').hidden && cmbArea.value) guardarCambiosInstantaneos({ navegacion: true });
   $('#appView').hidden = true;
   $('#home').hidden = false;
   $('#btnHome').classList.add('on');
@@ -2832,7 +2943,7 @@ function mostrarHome() {
 }
 
 function abrirArea(dir, area) {
-  if (cmbArea.value && !$('#appView').hidden) guardarCambiosInstantaneos();
+  if (cmbArea.value && !$('#appView').hidden) guardarCambiosInstantaneos({ navegacion: true });
   dirActual = dir;
   llenarDirecciones();
   llenarAreas(area);
@@ -2942,11 +3053,15 @@ function resumenArea(dir, area) {
         v += c * r.pond;
       }
     });
+    s.valor = v;
     global += v * s.pond;
     sumP += s.pond;
   });
   if (!secs.some(function (s) { return !s.extra; }) && sumP > 0) global /= sumP;
-  return { global: global, hasData: secs.length > 0 && rs.length > 0, actividades: rs.length };
+  return {
+    global: global, hasData: secs.length > 0 && rs.length > 0, actividades: rs.length,
+    secciones: secs.map(function (s) { return { nombre: s.nombre, pond: s.pond, valor: s.valor || 0 }; })
+  };
 }
 
 function colorPct(v) { return v >= 0.9 ? COL.green : (v >= 0.7 ? COL.orange : COL.red); }
@@ -3075,7 +3190,7 @@ async function btnNuevaArea_Click() {
     await showMessage('Ya existe un área con ese nombre en esta dirección.', 'Atención', 'warn');
     return;
   }
-  if (cmbArea.value) guardarCambiosInstantaneos();
+  if (cmbArea.value) guardarCambiosInstantaneos({ navegacion: true });
   const l = areasCustom(dirActual);
   l.push(nombre);
   db['__Areas|' + dirActual] = JSON.stringify(l);
@@ -3136,6 +3251,417 @@ async function btnEditarSeccion_Click() {
 }
 
 /* =====================================================================
+   Meses evaluados (con fecha de inicio y de última modificación)
+   ===================================================================== */
+const MESES_ES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+function periodoDeFecha(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1); }
+function periodoHoy() { return periodoDeFecha(new Date()); }
+function periodoValido(p) { return /^\d{4}-(0[1-9]|1[0-2])$/.test(p || ''); }
+function etiquetaPeriodo(p) {
+  if (!periodoValido(p)) return String(p || '');
+  const n = MESES_ES[Number(p.slice(5)) - 1];
+  return n.charAt(0).toUpperCase() + n.slice(1) + ' ' + p.slice(0, 4);
+}
+function periodoActivo(key) { const p = db[key + '__Periodo']; return periodoValido(p) ? p : periodoHoy(); }
+function setPeriodoActivo(key, p) { db[key + '__Periodo'] = p; }
+function leerSnap(key, per) { try { return JSON.parse(db[key + '__Mes|' + per] || 'null'); } catch (e) { return null; } }
+function periodosGuardados(key) {
+  const pre = key + '__Mes|', out = [];
+  Object.keys(db).forEach(function (k) { if (k.indexOf(pre) === 0) out.push(k.slice(pre.length)); });
+  return out;
+}
+function periodoAnioMes() {
+  const p = cmbArea.value ? periodoActivo(areaKey()) : periodoHoy();
+  return { anio: Number(p.slice(0, 4)), mes: Number(p.slice(5)) - 1 };
+}
+function fmtFechaHora(iso) {
+  const d = new Date(iso);
+  if (isNaN(d)) return '';
+  return pad2(d.getDate()) + '/' + pad2(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+}
+
+/* ¿El área tiene algo distinto de sus valores originales? (evita registrar fechas sin cambios reales) */
+function hayCambiosFrenteAlOriginal() {
+  if (seccionesExtra.size > 0) return true;
+  const textos = [txtNombreEvaluado, txtPuestoEvaluado, txtNombreEvaluador, txtPuestoEvaluador];
+  if (textos.some(function (i) { return i.value.trim() !== ''; })) return true;
+  const d = defArea(dirActual, cmbArea.value);
+  const base = new Map();
+  d.filas.forEach(function (f) { base.set(d.secciones[f[0]][0] + '|' + f[1], f); });
+  return rows.some(function (r) {
+    const f = base.get(r.sec + '|' + r.tarea);
+    if (!f) return true;
+    return r.err !== f[4] || r.cumpl !== f[5] || String(r.obs) !== String(f[6]) || r.regla !== f[2] || r.pond !== f[3] ||
+      !!r.evid || !!r.respNombre || !!r.respCorreo;
+  });
+}
+
+/* Foto del mes: se actualiza con cada edición del usuario y conserva la fecha de inicio */
+function guardarSnapshotPeriodo(key) {
+  const per = periodoActivo(key);
+  const prev = leerSnap(key, per);
+  const ahora = new Date().toISOString();
+  const r = resumenArea(dirActual, cmbArea.value);
+  db[key + '__Mes|' + per] = JSON.stringify({
+    periodo: per,
+    inicio: (prev && prev.inicio) || ahora,
+    modificado: ahora,
+    global: r.global,
+    secciones: r.secciones,
+    evaluado: txtNombreEvaluado.value, puestoEvaluado: txtPuestoEvaluado.value,
+    evaluador: txtNombreEvaluador.value, puestoEvaluador: txtPuestoEvaluador.value,
+    filas: rows.map(function (x) {
+      return { sec: x.sec, tarea: x.tarea, regla: x.regla, pond: x.pond, err: x.err, cumpl: x.cumpl, obs: x.obs,
+        evid: x.evid, evImg: x.evImg, respNombre: x.respNombre || '', respCorreo: x.respCorreo || '' };
+    })
+  });
+  db[key + '__Periodo'] = per;
+}
+
+function aplicarSnapshotAWorking(key, snap) {
+  db[key + '_Evaluado'] = snap.evaluado || '';
+  db[key + '_PuestoEvaluado'] = snap.puestoEvaluado || '';
+  db[key + '_Evaluador'] = snap.evaluador || '';
+  db[key + '_PuestoEvaluador'] = snap.puestoEvaluador || '';
+  (snap.filas || []).forEach(function (f) {
+    const kb = key + '|' + f.sec + '|' + f.tarea;
+    db[kb + '|Errores'] = String(f.err);
+    db[kb + '|Cumplimiento'] = String(f.cumpl);
+    db[kb + '|Observaciones'] = String(f.obs || '');
+    db[kb + '|Evidencia'] = String(f.evid || '');
+    db[kb + '|EvidenciaImg'] = String(f.evImg || '');
+    db[kb + '|RespNombre'] = String(f.respNombre || '');
+    db[kb + '|RespCorreo'] = String(f.respCorreo || '');
+  });
+}
+
+function cambiarPeriodo(nuevo) {
+  if (!cmbArea.value || !periodoValido(nuevo)) return;
+  const key = areaKey();
+  const actual = periodoActivo(key);
+  if (nuevo === actual) { llenarPeriodos(); return; }
+
+  // Datos anteriores a esta función: se conservan como foto del mes que se deja
+  if (!leerSnap(key, actual) && hayCambiosFrenteAlOriginal()) guardarSnapshotPeriodo(key);
+
+  setPeriodoActivo(key, nuevo);
+  Object.keys(db).forEach(function (k) { if (k.indexOf(key + '|') === 0) delete db[k]; });
+  const snap = leerSnap(key, nuevo);
+  if (snap) aplicarSnapshotAWorking(key, snap);
+  guardarDB();
+
+  selectedRow = null;
+  setupArea(cmbArea.value, false);
+  renderSidebar();
+}
+
+function llenarPeriodos() {
+  const sel = $('#cmbPeriodo');
+  if (!sel || !cmbArea.value) return;
+  const key = areaKey();
+  const act = periodoActivo(key);
+  const lista = periodosGuardados(key);
+  if (lista.indexOf(act) < 0) lista.push(act);
+  lista.sort().reverse();
+  sel.innerHTML = lista.map(function (p) {
+    return '<option value="' + p + '">' + etiquetaPeriodo(p) + (p === periodoHoy() ? ' (mes actual)' : '') + (leerSnap(key, p) ? '' : ' · sin captura') + '</option>';
+  }).join('');
+  sel.value = act;
+}
+
+function actualizarFechas() {
+  const el = $('#areaFechas');
+  if (!el) return;
+  if (!cmbArea.value) { el.textContent = ''; return; }
+  const key = areaKey();
+  const snap = leerSnap(key, periodoActivo(key));
+  el.innerHTML = snap
+    ? 'Evaluación iniciada el <b>' + esc(fmtFechaHora(snap.inicio)) + '</b> · Última modificación <b>' + esc(fmtFechaHora(snap.modificado)) + '</b>'
+    : 'Aún sin cambios en este mes. La fecha se registra al empezar a modificar.';
+}
+
+function mesesChartSvg(snaps) {
+  const n = snaps.length, bw = 54, gap = 26, L = 44, T = 22, H = 190, B = 42;
+  const W = L + n * (bw + gap) + 10, Ht = T + H + B;
+  let s = '<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + Ht + '" viewBox="0 0 ' + W + ' ' + Ht + '" font-family="Public Sans, Segoe UI, sans-serif" role="img" aria-label="Cumplimiento por mes">';
+  [0, 0.5, 0.7, 0.9, 1].forEach(function (f) {
+    const y = T + Math.round((1 - f) * H);
+    s += '<line x1="' + L + '" y1="' + y + '" x2="' + (W - 6) + '" y2="' + y + '" stroke="' + (f === 0.7 || f === 0.9 ? '#d9e0e8' : '#eaeef3') + '"' + (f === 0.7 || f === 0.9 ? ' stroke-dasharray="4 4"' : '') + '/>' +
+      '<text x="' + (L - 8) + '" y="' + (y + 4) + '" font-size="11" fill="' + COL.muted + '" text-anchor="end">' + Math.round(f * 100) + '%</text>';
+  });
+  snaps.forEach(function (sn, i) {
+    const x = L + gap / 2 + i * (bw + gap), v = clamp01(sn.global), h = Math.round(v * H), y = T + H - h;
+    s += '<rect x="' + x + '" y="' + y + '" width="' + bw + '" height="' + Math.max(h, 1) + '" rx="5" fill="' + colorPct(sn.global) + '"/>' +
+      '<text x="' + (x + bw / 2) + '" y="' + (y - 6) + '" font-size="12" font-weight="700" text-anchor="middle" fill="' + colorPct(sn.global) + '">' + Math.round(sn.global * 100) + '%</text>' +
+      '<text x="' + (x + bw / 2) + '" y="' + (T + H + 18) + '" font-size="11.5" text-anchor="middle" fill="' + COL.text + '">' + esc(etiquetaPeriodo(sn.periodo).split(' ')[0].slice(0, 3)) + '</text>' +
+      '<text x="' + (x + bw / 2) + '" y="' + (T + H + 32) + '" font-size="10.5" text-anchor="middle" fill="' + COL.muted + '">' + esc(sn.periodo.slice(0, 4)) + '</text>';
+  });
+  return s + '</svg>';
+}
+
+function renderMeses() {
+  const cont = $('#pnlMesesContainer');
+  if (!cont) return;
+  if (!cmbArea.value) { cont.innerHTML = ''; return; }
+  const key = areaKey();
+  const act = periodoActivo(key);
+  const lista = periodosGuardados(key).sort().reverse();
+  const snaps = lista.map(function (p) { return leerSnap(key, p); }).filter(Boolean);
+  if (!snaps.length) {
+    cont.innerHTML = '<p class="empty">Todavía no hay meses evaluados en esta área. En cuanto alguien empiece a capturar cambios, el mes queda registrado aquí con su fecha de inicio y de última modificación.</p>';
+    return;
+  }
+  let h = '<div class="meses-chart">' + mesesChartSvg(snaps.slice().reverse()) + '</div>' +
+    '<div class="meses-wrap"><table class="meses"><thead><tr><th>Mes evaluado</th><th>Inicio de la evaluación</th><th>Última modificación</th><th>Evaluado</th><th>Cumplimiento</th><th></th></tr></thead><tbody>';
+  snaps.forEach(function (sn) {
+    const esAct = sn.periodo === act;
+    h += '<tr' + (esAct ? ' class="on"' : '') + '><td><b>' + esc(etiquetaPeriodo(sn.periodo)) + '</b>' + (esAct ? '<span class="badge">En edición</span>' : '') + '</td>' +
+      '<td>' + esc(fmtFechaHora(sn.inicio)) + '</td><td>' + esc(fmtFechaHora(sn.modificado)) + '</td>' +
+      '<td>' + esc(sn.evaluado || '—') + '</td>' +
+      '<td><div class="cum"><b style="color:' + colorPct(sn.global) + '">' + pct1(sn.global) + '</b><i><u style="width:' + Math.round(clamp01(sn.global) * 100) + '%;background:' + colorPct(sn.global) + '"></u></i></div></td>' +
+      '<td>' + (esAct ? '' : '<button class="btn" data-per="' + esc(sn.periodo) + '">Abrir este mes</button>') + '</td></tr>';
+  });
+  cont.innerHTML = h + '</tbody></table></div>';
+}
+
+function activarTab(nombre) {
+  document.querySelectorAll('.tab').forEach(function (t) { t.classList.toggle('active', t.dataset.tab === nombre); });
+  document.querySelectorAll('.tab-page').forEach(function (p) { p.classList.toggle('active', p.id === 'tab-' + nombre); });
+}
+
+function dlgMes() {
+  return modal(function (box, cerrar) {
+    box.innerHTML =
+      '<h3 class="dlg-title">Evaluar otro mes</h3>' +
+      '<div class="dlg-grid" style="grid-template-columns:1fr"><label>Mes y año a evaluar</label><input id="m_val" type="month" autofocus></div>' +
+      '<p class="dlg-note">Si el mes ya tiene captura, se abre tal como quedó. Si es nuevo, empieza con los valores originales del área y se registra su fecha de inicio cuando alguien modifique algo.</p>' +
+      '<div class="dlg-btns"><button class="btn blue" id="m_ok">Abrir mes</button><button class="btn" id="m_cancel">Cancelar</button></div>';
+    const inp = box.querySelector('#m_val');
+    inp.value = cmbArea.value ? periodoActivo(areaKey()) : periodoHoy();
+    box.querySelector('#m_ok').onclick = function () { cerrar(periodoValido(inp.value) ? inp.value : null); };
+    box.querySelector('#m_cancel').onclick = function () { cerrar(null); };
+  }, { width: 420, cancelValue: null });
+}
+
+/* =====================================================================
+   Envío del cronograma por correo al responsable de cada actividad
+   ===================================================================== */
+let gruposResp = [];
+
+function responsablesDeArea() {
+  const m = new Map(), sin = [];
+  rows.forEach(function (r) {
+    const c = String(r.respCorreo || '').trim();
+    if (!c) { sin.push(r); return; }
+    const k = c.toLowerCase();
+    if (!m.has(k)) m.set(k, { nombre: '', correo: c, filas: [] });
+    const o = m.get(k);
+    if (!o.nombre && r.respNombre) o.nombre = r.respNombre;
+    o.filas.push(r);
+  });
+  return { lista: Array.from(m.values()), sin: sin };
+}
+
+function asuntoCorreo() {
+  return 'Cronograma de entregas - ' + areaLabel() + ' - ' + etiquetaPeriodo(periodoActivo(areaKey()));
+}
+
+function armarMensajeCorreo(nombre, filas, completo) {
+  const per = etiquetaPeriodo(periodoActivo(areaKey()));
+  const L = [];
+  L.push('Hola' + (nombre ? ' ' + nombre : '') + ',');
+  L.push('');
+  L.push(completo
+    ? 'Te comparto el cronograma de entregas de ' + per + ' del área ' + areaLabel() + '.'
+    : 'Te comparto el cronograma de entregas de ' + per + ' del área ' + areaLabel() + ', con las actividades que tienes a tu cargo:');
+  L.push('');
+  secciones.forEach(function (sec) {
+    const fs = filas.filter(function (r) { return r.sec === sec.nombre; });
+    if (!fs.length) return;
+    L.push(sec.nombre);
+    fs.forEach(function (r) {
+      const resp = completo && (r.respNombre || r.respCorreo) ? '  (Responsable: ' + (r.respNombre || r.respCorreo) + ')' : '';
+      L.push('  - ' + r.tarea + ': ' + r.regla + resp);
+    });
+    L.push('');
+  });
+  L.push('Por favor confirma de recibido y avísame con anticipación si alguna actividad corre riesgo de retraso.');
+  L.push('');
+  L.push('Saludos,');
+  const ev = txtNombreEvaluador.value.trim();
+  if (ev) L.push(ev);
+  return L.join('\n');
+}
+
+function construirMailto(para, asunto, cuerpo) {
+  const dest = listaCorreos(para).join(',');
+  let b = String(cuerpo).replace(/\r?\n/g, '\r\n');
+  const arma = function (x) { return 'mailto:' + dest + '?subject=' + encodeURIComponent(asunto) + '&body=' + encodeURIComponent(x); };
+  let recortado = false;
+  while (arma(b).length > 1900 && b.length > 200) { b = b.slice(0, Math.floor(b.length * 0.85)); recortado = true; }
+  if (recortado) b += '\r\n\r\n[Mensaje recortado por el límite de tu programa de correo. Pega aquí el texto completo, que ya quedó copiado.]';
+  return { url: arma(b), recortado: recortado };
+}
+
+function b64utf8(str) {
+  const bytes = new TextEncoder().encode(str);
+  let bin = '';
+  bytes.forEach(function (x) { bin += String.fromCharCode(x); });
+  return btoa(bin);
+}
+function enLineas76(b64) { return b64.replace(/(.{76})/g, '$1\r\n'); }
+function nombreArchivoSeguro(n) { return String(n).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9._-]/g, '_'); }
+
+function htmlCronogramaExcel(filas) {
+  const areaNom = areaLabel().replace(/ /g, '_');
+  const h = [];
+  h.push("<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:x='urn:schemas-microsoft-com:office:excel' xmlns='http://www.w3.org/TR/REC-html40'>");
+  h.push("<head><meta charset='utf-8'/><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets>");
+  h.push('<x:ExcelWorksheet><x:Name>' + esc(areaNom.replace(/[\\/?*\[\]:]/g, '_').substring(0, 31)) + '</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet>');
+  h.push('</x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body>');
+  h.push('<h2>CRONOGRAMA DE ENTREGAS - ÁREA: ' + esc(areaLabel()) + ' - ' + esc(etiquetaPeriodo(periodoActivo(areaKey()))) + '</h2>');
+  h.push("<table border='1' style='border-collapse:collapse; font-family:Segoe UI, Arial; font-size:10pt;'>");
+  h.push("<tr style='background-color:#1F497D; color:white; font-weight:bold;'>");
+  h.push('<th>Subsección</th><th>Tarea / Indicador</th><th>Regla / Fecha de Entrega</th><th>Responsable</th><th>Correo</th>');
+  h.push('</tr>');
+  filas.forEach(function (r) {
+    h.push('<tr><td><b>' + esc(r.sec) + '</b></td><td>' + esc(r.tarea) + "</td><td style='background-color:#EBF1F5;'><b>" + esc(r.regla) + '</b></td><td>' +
+      esc(r.respNombre || '') + '</td><td>' + esc(r.respCorreo || '') + '</td></tr>');
+  });
+  h.push('</table></body></html>');
+  return h.join('\r\n');
+}
+
+function construirEml(para, asunto, cuerpo, adjNombre, adjHtml) {
+  const b = '----=_KPI_' + Date.now().toString(36);
+  const L = [];
+  L.push('To: ' + listaCorreos(para).join(', '));
+  L.push('Subject: =?UTF-8?B?' + b64utf8(asunto) + '?=');
+  L.push('X-Unsent: 1');
+  L.push('MIME-Version: 1.0');
+  L.push('Content-Type: multipart/mixed; boundary="' + b + '"');
+  L.push('');
+  L.push('--' + b);
+  L.push('Content-Type: text/plain; charset="UTF-8"');
+  L.push('Content-Transfer-Encoding: base64');
+  L.push('');
+  L.push(enLineas76(b64utf8(String(cuerpo).replace(/\r?\n/g, '\r\n'))));
+  L.push('--' + b);
+  L.push('Content-Type: application/vnd.ms-excel; name="' + adjNombre + '"');
+  L.push('Content-Transfer-Encoding: base64');
+  L.push('Content-Disposition: attachment; filename="' + adjNombre + '"');
+  L.push('');
+  L.push(enLineas76(b64utf8('\ufeff' + adjHtml)));
+  L.push('--' + b + '--');
+  L.push('');
+  return L.join('\r\n');
+}
+
+async function copiarTexto(t) {
+  try { await navigator.clipboard.writeText(t); return true; } catch (e) { /* respaldo */ }
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    const ok = document.execCommand('copy');
+    ta.remove();
+    return ok;
+  } catch (e) { return false; }
+}
+
+/* Ventana de correo: destinatarios, asunto y mensaje editables */
+function dlgCorreo(o) {
+  return modal(function (box, cerrar) {
+    box.innerHTML =
+      '<h3 class="dlg-title">' + esc(o.titulo) + '</h3>' +
+      '<div class="dlg-grid" style="grid-template-columns:90px 1fr">' +
+      '<label>Para</label><input id="c_para" placeholder="correo@empresa.com (varios: separa con coma)">' +
+      '<label>Asunto</label><input id="c_asunto">' +
+      '<label style="align-self:start;padding-top:8px">Mensaje</label><textarea id="c_cuerpo" class="dlg-input" rows="14" spellcheck="true"></textarea>' +
+      '</div>' +
+      '<p class="dlg-note" id="c_estado">«Abrir en mi correo» abre tu programa de correo con el mensaje listo. «Descargar borrador» genera un archivo .eml con el Excel adjunto: ábrelo y envíalo.</p>' +
+      '<div class="dlg-btns" style="flex-wrap:wrap">' +
+      '<button class="btn blue" id="c_mail">Abrir en mi correo</button>' +
+      '<button class="btn" id="c_eml">Descargar borrador con Excel (.eml)</button>' +
+      '<button class="btn" id="c_copy">Copiar mensaje</button>' +
+      '<button class="btn" id="c_close">Cerrar</button></div>';
+    const g = function (i) { return box.querySelector(i); };
+    g('#c_para').value = o.para || '';
+    g('#c_asunto').value = o.asunto;
+    g('#c_cuerpo').value = o.cuerpo;
+    const estado = function (t) { g('#c_estado').textContent = t; };
+    const validarPara = function () {
+      if (!correosValidos(g('#c_para').value)) { estado('Escribe al menos un correo válido en «Para».'); g('#c_para').focus(); return false; }
+      return true;
+    };
+    g('#c_mail').onclick = async function () {
+      if (!validarPara()) return;
+      const r = construirMailto(g('#c_para').value, g('#c_asunto').value, g('#c_cuerpo').value);
+      if (r.recortado) await copiarTexto(g('#c_cuerpo').value);
+      const a = document.createElement('a');
+      a.href = r.url; a.style.display = 'none';
+      document.body.appendChild(a); a.click(); a.remove();
+      estado(r.recortado
+        ? 'Se abrió tu correo, pero el mensaje era largo: quedó copiado completo en el portapapeles para que lo pegues.'
+        : 'Se abrió tu programa de correo. Si no ocurrió nada, usa «Descargar borrador» o «Copiar mensaje».');
+    };
+    g('#c_eml').onclick = function () {
+      if (!validarPara()) return;
+      const nombre = nombreArchivoSeguro('CRONOGRAMA_' + areaLabel().replace(/ /g, '_') + '_' + periodoActivo(areaKey())) + '.xls';
+      const eml = construirEml(g('#c_para').value, g('#c_asunto').value, g('#c_cuerpo').value, nombre, htmlCronogramaExcel(o.filas));
+      descargar('Borrador_' + nombre.replace(/\.xls$/, '') + '.eml', eml, 'message/rfc822');
+      estado('Borrador descargado. Ábrelo con tu programa de correo (Outlook lo abre como mensaje nuevo con el Excel adjunto) y envíalo.');
+    };
+    g('#c_copy').onclick = async function () {
+      estado((await copiarTexto(g('#c_cuerpo').value)) ? 'Mensaje copiado al portapapeles.' : 'No se pudo copiar. Selecciona el texto y cópialo manualmente.');
+    };
+    g('#c_close').onclick = function () { cerrar(true); };
+  }, { width: 640, cancelValue: true });
+}
+
+function abrirCorreoResponsable(i) {
+  const g = gruposResp[i];
+  if (!g) return;
+  dlgCorreo({
+    titulo: 'Enviar cronograma a ' + (g.nombre || g.correo),
+    para: g.correo, asunto: asuntoCorreo(),
+    cuerpo: armarMensajeCorreo(g.nombre, g.filas, false), filas: g.filas
+  });
+}
+
+function abrirCorreoCompleto() {
+  dlgCorreo({
+    titulo: 'Enviar el cronograma completo',
+    para: '', asunto: asuntoCorreo(),
+    cuerpo: armarMensajeCorreo('', rows, true), filas: rows
+  });
+}
+
+function renderCorreos() {
+  const cont = $('#mailList');
+  if (!cont) return;
+  const r = responsablesDeArea();
+  gruposResp = r.lista;
+  if (!rows.length) { cont.innerHTML = '<p class="empty">Esta área aún no tiene actividades.</p>'; return; }
+  let h = '';
+  r.lista.forEach(function (g, i) {
+    const inicial = (g.nombre || g.correo).trim().charAt(0).toUpperCase();
+    h += '<div class="mail-row"><div class="avatar">' + esc(inicial) + '</div>' +
+      '<div class="mail-who"><b>' + esc(g.nombre || 'Sin nombre') + '</b><span>' + esc(g.correo) + '</span></div>' +
+      '<div class="mail-n">' + g.filas.length + (g.filas.length === 1 ? ' actividad' : ' actividades') + '</div>' +
+      '<button class="btn blue" data-i="' + i + '">Enviar cronograma</button></div>';
+  });
+  if (!r.lista.length) {
+    h += '<p class="empty">Ninguna actividad tiene responsable con correo. Asígnalo en Captura: selecciona la actividad, pulsa «Modificar» y llena «Responsable» y «Correo».</p>';
+  }
+  if (r.sin.length && r.lista.length) {
+    h += '<p class="mail-warn">' + r.sin.length + (r.sin.length === 1 ? ' actividad no tiene' : ' actividades no tienen') + ' responsable con correo y no se incluyen en estos envíos.</p>';
+  }
+  cont.innerHTML = h;
+}
+
+/* =====================================================================
    Inicio (Form1_Load)
    ===================================================================== */
 function inicializar() {
@@ -3185,18 +3711,32 @@ function inicializar() {
 
   // Pestañas
   document.querySelectorAll('.tab').forEach(function (tab) {
-    tab.addEventListener('click', function () {
-      document.querySelectorAll('.tab').forEach(function (t) { t.classList.toggle('active', t === tab); });
-      document.querySelectorAll('.tab-page').forEach(function (p) { p.classList.toggle('active', p.id === 'tab-' + tab.dataset.tab); });
-    });
+    tab.addEventListener('click', function () { activarTab(tab.dataset.tab); });
   });
+
+  // Meses evaluados y correo
+  $('#cmbPeriodo').addEventListener('change', function (e) { cambiarPeriodo(e.target.value); });
+  $('#btnNuevoMes').onclick = async function () {
+    const p = await dlgMes();
+    if (p) cambiarPeriodo(p);
+  };
+  $('#pnlMesesContainer').addEventListener('click', function (e) {
+    const b = e.target.closest('[data-per]');
+    if (b) { cambiarPeriodo(b.dataset.per); activarTab('captura'); }
+  });
+  $('#mailList').addEventListener('click', function (e) {
+    const b = e.target.closest('[data-i]');
+    if (b) abrirCorreoResponsable(Number(b.dataset.i));
+  });
+  $('#btnCorreoCompleto').onclick = abrirCorreoCompleto;
 
   conectarGrid();
 
   // FormClosing: guarda de forma forzada al cerrar
-  window.addEventListener('pagehide', guardarCambiosInstantaneos);
-  window.addEventListener('beforeunload', guardarCambiosInstantaneos);
-  document.addEventListener('visibilitychange', function () { if (document.hidden) guardarCambiosInstantaneos(); });
+  const guardadoAuto = function () { guardarCambiosInstantaneos({ navegacion: true }); };
+  window.addEventListener('pagehide', guardadoAuto);
+  window.addEventListener('beforeunload', guardadoAuto);
+  document.addEventListener('visibilitychange', function () { if (document.hidden) guardadoAuto(); });
 
   // Nuevos controles: direcciones, áreas y ponderación de secciones
   cmbDir.addEventListener('change', function () { abrirArea(cmbDir.value, null); });
