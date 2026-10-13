@@ -521,6 +521,57 @@ table.meses { width: 100%; border-collapse: collapse; min-width: 720px; }
 .dlg textarea.dlg-input { resize: vertical; font: inherit; line-height: 1.45; }
 @media (max-width: 640px) { .mail-row { grid-template-columns: 38px minmax(0, 1fr); } .mail-n { display: none; } .mail-row .btn { grid-column: 1 / -1; } }
 
+.chk { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 13px; font-weight: 600; }
+.chk input { width: 16px; height: 16px; }
+.steps { margin: 6px 0 8px 18px; padding: 0; font-size: 13px; line-height: 1.5; }
+.dlg textarea.code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; line-height: 1.4; background: #0f2238; color: #d7e4f4; border-color: #0f2238; }
+.mail-n .sent { color: var(--ok); font-weight: 600; }
+
+/* ---------- Fechas de la evaluación ---------- */
+.stamp { display: flex; flex-wrap: wrap; align-items: stretch; gap: 10px; margin-top: 12px; }
+.stamp-item {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  border-radius: 8px;
+  padding: 7px 14px 8px;
+  display: flex;
+  flex-direction: column;
+  min-width: 190px;
+}
+.stamp-item + .stamp-item { border-left-color: var(--violet); }
+.stamp-lbl { font-size: 11.5px; font-weight: 600; color: var(--muted); }
+.stamp-item b { font-family: var(--display); font-weight: 800; font-size: 16px; letter-spacing: -0.01em; margin-top: 1px; }
+.stamp-item small { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.stamp-ok { display: flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 700; color: var(--ok); padding: 0 6px; }
+.stamp-ok i { width: 9px; height: 9px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 4px rgba(27, 158, 91, 0.16); }
+.stamp-empty { background: var(--surface); border: 1px dashed var(--line); border-radius: 8px; padding: 9px 14px; color: var(--muted); font-size: 12.5px; }
+.fh { display: flex; flex-direction: column; line-height: 1.25; font-weight: 600; }
+.fh small { color: var(--muted); font-weight: 500; font-size: 12px; }
+
+/* ---------- Avisos ---------- */
+#toasts { position: fixed; right: 22px; bottom: 22px; z-index: 1200; pointer-events: none; }
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--ink);
+  color: #fff;
+  border-radius: 12px;
+  padding: 12px 18px 12px 14px;
+  box-shadow: 0 12px 32px rgba(16, 36, 59, 0.35);
+  animation: toast-in 0.22s ease-out;
+}
+.toast i { width: 26px; height: 26px; border-radius: 50%; background: var(--ok); flex: 0 0 auto; position: relative; }
+.toast i::after { content: ""; position: absolute; left: 9px; top: 5px; width: 6px; height: 11px; border: solid #fff; border-width: 0 2.5px 2.5px 0; transform: rotate(45deg); }
+.toast b { display: block; font-size: 13.5px; }
+.toast span { display: block; font-size: 12px; color: #a9bbd0; font-variant-numeric: tabular-nums; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+.pond-hint { font-size: 12.5px; color: var(--muted); margin-top: 10px; min-height: 18px; }
+.pond-hint.over { color: var(--bad); font-weight: 600; }
+.dlg-note.ok { color: var(--ok); font-weight: 600; }
+
 </style>
 </head>
 <body>
@@ -569,8 +620,9 @@ table.meses { width: 100%; border-collapse: collapse; min-width: 720px; }
               <select id="cmbPeriodo"></select>
             </label>
             <button class="btn" id="btnNuevoMes">Otro mes…</button>
-            <span class="period-dates" id="areaFechas"></span>
+            
           </div>
+          <div class="stamp" id="areaFechas"></div>
         </div>
         <div class="area-actions" id="areaActions">
           <button class="btn blue" id="btnCalcular">Recalcular</button>
@@ -706,9 +758,12 @@ table.meses { width: 100%; border-collapse: collapse; min-width: 720px; }
           <div class="mail-head">
             <div>
               <h2 class="panel-title" style="margin:0">Enviar por correo</h2>
-              <p class="hint" style="margin:2px 0 0">Cada responsable recibe solo las actividades que tiene asignadas. El responsable y su correo se asignan en Captura, con «Modificar».</p>
+              <p class="hint" style="margin:2px 0 0">Cada responsable recibe solo las actividades que tiene asignadas. El responsable y su correo se asignan en Captura, con «Modificar». El envío sale directo desde esta página, con tu Gmail.</p>
             </div>
-            <button class="btn" id="btnCorreoCompleto">Enviar cronograma completo…</button>
+            <div class="group">
+              <button class="btn" id="btnConfigEnvio">Configurar envío</button>
+              <button class="btn" id="btnCorreoCompleto">Enviar cronograma completo…</button>
+            </div>
           </div>
           <div class="mail-list" id="mailList"></div>
         </div>
@@ -725,6 +780,7 @@ table.meses { width: 100%; border-collapse: collapse; min-width: 720px; }
   </div>
 </div>
 
+<div id="toasts" aria-live="polite"></div>
 <div id="modalRoot"></div>
 
 <!-- Librería para generar los PDF (se carga desde CDN) -->
@@ -1502,6 +1558,9 @@ function areaKeyOf(dir, area) { return dir === DIR_ADMIN ? area : dir + '/' + ar
 function areaKey() { return areaKeyOf(dirActual, cmbArea.value); }
 function areaLabel() { return dirActual === DIR_ADMIN ? cmbArea.value : dirActual + ' - ' + cmbArea.value; }
 function limiteSecciones() { return esAreaBase(dirActual, cmbArea.value) ? 0.9 : 1.0; }
+function leerEstructura(key) {
+  try { const v = JSON.parse(db[key + '__Estructura'] || 'null'); return Array.isArray(v) ? v : null; } catch (e) { return null; }
+}
 function guardarDB() { try { localStorage.setItem(DB_KEY, JSON.stringify(db)); } catch (e) { /* sin espacio */ } }
 function nombreSeguro(t) {
   return String(t || '').trim().toUpperCase().replace(/[=|~\/_]/g, ' ').replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
@@ -1666,7 +1725,7 @@ function tryParseNum(texto) {
 }
 
 /* FormDialogActividad */
-function dlgActividad(seccion, pTarea, pRegla, pPond, pErr, pCumpl, pObs, pEv, pEvImg, pRespN, pRespC) {
+function dlgActividad(seccion, pTarea, pRegla, pPond, pErr, pCumpl, pObs, pEv, pEvImg, pRespN, pRespC, pOtros) {
   return modal(function (box, cerrar) {
     box.innerHTML =
       '<h3 class="dlg-title">Gestión de Actividad / Indicador</h3>' +
@@ -1682,6 +1741,7 @@ function dlgActividad(seccion, pTarea, pRegla, pPond, pErr, pCumpl, pObs, pEv, p
       '<label>Correo del responsable:</label><input id="d_respc" type="text" inputmode="email" placeholder="nombre@empresa.com (varios: separa con coma)">' +
       '<label>Imagen de Evidencia:</label><div class="ev-row"><input id="d_ev"><button type="button" id="d_evbtn" title="Examinar…">...</button></div>' +
       '</div>' +
+      '<div class="pond-hint" id="d_hint"></div>' +
       '<div class="dlg-btns"><button class="btn green" id="d_ok">Guardar</button><button class="btn" id="d_cancel">Cancelar</button></div>';
 
     const g = function (id) { return box.querySelector(id); };
@@ -1694,6 +1754,17 @@ function dlgActividad(seccion, pTarea, pRegla, pPond, pErr, pCumpl, pObs, pEv, p
     g('#d_ev').value = pEv;
     g('#d_respn').value = pRespN || '';
     g('#d_respc').value = pRespC || '';
+
+    const hint = function () {
+      const h = g('#d_hint');
+      if (pOtros === undefined) { h.textContent = ''; return; }
+      const total = pOtros + tryParseNum(g('#d_pond').value);
+      h.className = 'pond-hint' + (total > 1.0001 ? ' over' : '');
+      h.textContent = 'Las actividades de esta subsección suman ' + pct0(total) + ' con esta ponderación' +
+        (total > 1.0001 ? ': pasa de 100% y el cumplimiento podría superar 100%.' : (total < 0.9999 ? ' (falta ' + pct0(1 - total) + ' para 100%).' : ' (100%).'));
+    };
+    g('#d_pond').addEventListener('input', hint);
+    hint();
 
     let pendiente = null; // {nombre, data}
 
@@ -1715,6 +1786,11 @@ function dlgActividad(seccion, pTarea, pRegla, pPond, pErr, pCumpl, pObs, pEv, p
         await showMessage('El correo del responsable no es válido. Escribe uno como nombre@empresa.com (si son varios, sepáralos con coma).', 'Atención', 'warn');
         g('#d_respc').focus();
         return;
+      }
+      if (pOtros !== undefined && pOtros + tryParseNum(g('#d_pond').value) > 1.0001) {
+        const ok = await showConfirm('Con esta ponderación las actividades de la subsección suman ' + pct0(pOtros + tryParseNum(g('#d_pond').value)) +
+          ', más de 100%, y el cumplimiento de la subsección podría pasar de 100%.\n\n¿Guardar de todos modos?', 'Ponderación mayor a 100%', 'warn');
+        if (!ok) return;
       }
       const evTxt = g('#d_ev').value.trim();
       let evImg = '';
@@ -1840,10 +1916,14 @@ function guardarCambiosInstantaneos(opt) {
     });
 
     guardarActividadesExtra(areaActual);
+    // Las actividades (agregadas, modificadas o eliminadas) se conservan en toda el área, no solo en secciones manuales
+    if (!nav && cmbArea.value) {
+      db[areaActual + '__Estructura'] = JSON.stringify(rows.map(function (r) { return { sec: r.sec, tarea: r.tarea, regla: r.regla, pond: r.pond }; }));
+    }
     if (!nav && cmbArea.value) guardarSnapshotPeriodo(areaActual);
     localStorage.setItem(DB_KEY, JSON.stringify(db));
     if ($('#navDirs')) renderSidebar();
-    if (!nav && cmbArea.value) { llenarPeriodos(); actualizarFechas(); renderMeses(); }
+    if (!nav && cmbArea.value) { llenarPeriodos(); actualizarFechas(); renderMeses(); programarToast(); }
   } catch (e) { /* igual que el original: se ignora */ }
 }
 
@@ -1969,13 +2049,20 @@ function setupArea(area, desdeArchivo) {
 
   secciones = def.secciones.map(function (s) { return { nombre: s[0], pond: s[1], valor: 0 }; });
   rows = [];
+  const keyArea = areaKeyOf(dirActual, area);
+  const est = desdeArchivo ? null : leerEstructura(keyArea);
   if (!desdeArchivo) {
-    def.filas.forEach(function (f) {
-      rows.push(crearFila(def.secciones[f[0]][0], f[1], f[2], f[3], f[4], f[5], f[6], ''));
-    });
+    if (est) {
+      est.forEach(function (f) { rows.push(crearFila(f.sec, f.tarea, f.regla, num(f.pond, 0), 0.0, 1.0, '', '')); });
+    } else {
+      def.filas.forEach(function (f) {
+        rows.push(crearFila(def.secciones[f[0]][0], f[1], f[2], f[3], f[4], f[5], f[6], ''));
+      });
+    }
   }
 
-  aplicarSeccionesExtraDelArea(areaKeyOf(dirActual, area), desdeArchivo);
+  aplicarSeccionesExtraDelArea(keyArea, desdeArchivo || !!est);
+  if (est) rows = rows.filter(function (r) { return secciones.some(function (s) { return s.nombre === r.sec; }); });
   reconstruirCardsUI();
   llenarComboSecciones();
   if (!desdeArchivo) aplicarCalificacionesGuardadas();
@@ -2309,11 +2396,12 @@ async function btnAgregarActividad_Click() {
     return;
   }
   const secNombre = cmbSec.value;
-  const r = await dlgActividad(secNombre, '', '', 0.1, 0, 1.0, '', '', '', '', '');
+  const r = await dlgActividad(secNombre, '', '', 0.1, 0, 1.0, '', '', '', '', '', rows.filter(function (x) { return x.sec === secNombre && x !== null; }).reduce(function (a, x) { return a + num(x.pond, 0); }, 0));
   if (r) {
     const nf = crearFila(secNombre, r.tarea, r.regla, r.pond, r.err, r.cumpl, r.obs, r.evid, r.evImg);
     nf.respNombre = r.respNombre; nf.respCorreo = r.respCorreo;
     rows.push(nf);
+    avisar('Actividad agregada y guardada');
     calcularKPIsGlobales();
     guardarCambiosInstantaneos();
   }
@@ -2325,11 +2413,12 @@ async function btnModificarActividad_Click() {
     return;
   }
   const dr = selectedRow;
-  const r = await dlgActividad(dr.sec, dr.tarea, dr.regla, num(dr.pond, 0), num(dr.err, 0), num(dr.cumpl, 1), dr.obs, dr.evid, dr.evImg, dr.respNombre, dr.respCorreo);
+  const r = await dlgActividad(dr.sec, dr.tarea, dr.regla, num(dr.pond, 0), num(dr.err, 0), num(dr.cumpl, 1), dr.obs, dr.evid, dr.evImg, dr.respNombre, dr.respCorreo, rows.filter(function (x) { return x.sec === dr.sec && x !== dr; }).reduce(function (a, x) { return a + num(x.pond, 0); }, 0));
   if (r) {
     dr.tarea = r.tarea; dr.regla = r.regla; dr.pond = r.pond; dr.err = r.err;
     dr.cumpl = r.cumpl; dr.obs = r.obs; dr.evid = r.evid; dr.evImg = r.evImg;
     dr.respNombre = r.respNombre; dr.respCorreo = r.respCorreo;
+    avisar('Actividad modificada y guardada');
     calcularKPIsGlobales();
     guardarCambiosInstantaneos();
   }
@@ -2344,6 +2433,7 @@ async function btnEliminarActividad_Click() {
     const idx = rows.indexOf(selectedRow);
     if (idx >= 0) rows.splice(idx, 1);
     selectedRow = null;
+    avisar('Actividad eliminada');
     calcularKPIsGlobales();
     guardarCambiosInstantaneos();
   }
@@ -2386,7 +2476,7 @@ async function btnAgregarSeccion_Click() {
   }
 
   // Una sección sin actividades daría 0% y bajaría el global: se captura la primera actividad de inmediato
-  const act = await dlgActividad(nombre, '', '', 1.0, 0, 1.0, '', '', '', '', '');
+  const act = await dlgActividad(nombre, '', '', 1.0, 0, 1.0, '', '', '', '', '', 0);
   if (!act) {
     await showMessage('La sección no se creó: necesita al menos una actividad.', 'Atención', 'info');
     return;
@@ -2402,6 +2492,7 @@ async function btnAgregarSeccion_Click() {
   const nfa = crearFila(nombre, act.tarea, act.regla, act.pond, act.err, act.cumpl, act.obs, act.evid, act.evImg);
   nfa.respNombre = act.respNombre; nfa.respCorreo = act.respCorreo;
   rows.push(nfa);
+  avisar('Sección creada y guardada');
 
   refrescarUISecciones(nombre);
   guardarCambiosInstantaneos();
@@ -2504,7 +2595,10 @@ async function btnReiniciarArea_Click() {
     limpiarInput(txtPuestoEvaluador);
     txtBuscar.value = '';
 
-    if (cmbArea.value) setupArea(cmbArea.value, false);
+    if (cmbArea.value) {
+      delete db[areaKey() + '__Estructura'];
+      setupArea(cmbArea.value, false);
+    }
 
     guardarCambiosInstantaneos();
     await showMessage('Área reiniciada correctamente a sus valores originales.', 'Sistema KPI', 'info');
@@ -3006,7 +3100,10 @@ function resumenArea(dir, area) {
   const key = areaKeyOf(dir, area);
   const d = defArea(dir, area);
   const secs = d.secciones.map(function (s) { return { nombre: s[0], pond: s[1], extra: false }; });
-  const rs = d.filas.map(function (f) { return { sec: d.secciones[f[0]][0], tarea: f[1], pond: f[3], err: f[4], cumpl: f[5] }; });
+  const estr = leerEstructura(key);
+  const rs = estr
+    ? estr.map(function (f) { return { sec: f.sec, tarea: f.tarea, pond: num(f.pond, 0), err: 0, cumpl: 1 }; })
+    : d.filas.map(function (f) { return { sec: d.secciones[f[0]][0], tarea: f[1], pond: f[3], err: f[4], cumpl: f[5] }; });
   const extraNames = new Set();
 
   leerSeccionesExtra(key).forEach(function (def) {
@@ -3024,7 +3121,7 @@ function resumenArea(dir, area) {
       secs.forEach(function (s) { if (!s.extra) s.pond *= f; });
     }
     let j = 0;
-    while (Object.prototype.hasOwnProperty.call(db, key + '_ActExtra_' + j)) {
+    while (!estr && Object.prototype.hasOwnProperty.call(db, key + '_ActExtra_' + j)) {
       const p = String(db[key + '_ActExtra_' + j]).split('~');
       if (p.length >= 4 && extraNames.has(p[0])) {
         let pond = parseFloat(p[3]);
@@ -3370,15 +3467,52 @@ function llenarPeriodos() {
   sel.value = act;
 }
 
+const MESES_CORTO = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+function fmtFechaLarga(iso) {
+  const d = new Date(iso);
+  return isNaN(d) ? '' : d.getDate() + ' ' + MESES_CORTO[d.getMonth()] + ' ' + d.getFullYear();
+}
+function fmtHora(iso) {
+  const d = new Date(iso);
+  return isNaN(d) ? '' : pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+}
+function hace(iso) {
+  const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (!isFinite(m) || m < 1) return 'hace un momento';
+  if (m < 60) return 'hace ' + m + ' min';
+  const h = Math.floor(m / 60);
+  if (h < 24) return 'hace ' + h + (h === 1 ? ' hora' : ' horas');
+  const d = Math.floor(h / 24);
+  return d === 1 ? 'ayer' : 'hace ' + d + ' días';
+}
+function fhHtml(iso) { return '<span class="fh">' + esc(fmtFechaLarga(iso)) + '<small>' + esc(fmtHora(iso)) + '</small></span>'; }
+
 function actualizarFechas() {
   const el = $('#areaFechas');
   if (!el) return;
-  if (!cmbArea.value) { el.textContent = ''; return; }
+  if (!cmbArea.value) { el.innerHTML = ''; return; }
   const key = areaKey();
   const snap = leerSnap(key, periodoActivo(key));
   el.innerHTML = snap
-    ? 'Evaluación iniciada el <b>' + esc(fmtFechaHora(snap.inicio)) + '</b> · Última modificación <b>' + esc(fmtFechaHora(snap.modificado)) + '</b>'
-    : 'Aún sin cambios en este mes. La fecha se registra al empezar a modificar.';
+    ? '<div class="stamp-item"><span class="stamp-lbl">Inicio de la evaluación</span><b>' + esc(fmtFechaLarga(snap.inicio)) + '</b><small>' + esc(fmtHora(snap.inicio)) + '</small></div>' +
+      '<div class="stamp-item"><span class="stamp-lbl">Última modificación</span><b>' + esc(fmtFechaLarga(snap.modificado)) + '</b><small>' + esc(fmtHora(snap.modificado)) + ' · ' + esc(hace(snap.modificado)) + '</small></div>' +
+      '<div class="stamp-ok"><i></i>Guardado</div>'
+    : '<div class="stamp-empty">Sin cambios en este mes. La fecha de inicio se registra en cuanto alguien empiece a modificar.</div>';
+}
+
+let toastTimer = null, toastDelay = null, avisoPendiente = null;
+function avisar(texto) { avisoPendiente = texto; }
+function programarToast() {
+  clearTimeout(toastDelay);
+  toastDelay = setTimeout(function () {
+    const box = $('#toasts');
+    if (!box) return;
+    const msg = avisoPendiente || 'Cambios guardados';
+    avisoPendiente = null;
+    box.innerHTML = '<div class="toast" role="status"><i></i><div><b>' + esc(msg) + '</b><span>' + esc(fmtFechaLarga(new Date().toISOString())) + ', ' + esc(fmtHora(new Date().toISOString())) + '</span></div></div>';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { box.innerHTML = ''; }, 2800);
+  }, 350);
 }
 
 function mesesChartSvg(snaps) {
@@ -3417,7 +3551,7 @@ function renderMeses() {
   snaps.forEach(function (sn) {
     const esAct = sn.periodo === act;
     h += '<tr' + (esAct ? ' class="on"' : '') + '><td><b>' + esc(etiquetaPeriodo(sn.periodo)) + '</b>' + (esAct ? '<span class="badge">En edición</span>' : '') + '</td>' +
-      '<td>' + esc(fmtFechaHora(sn.inicio)) + '</td><td>' + esc(fmtFechaHora(sn.modificado)) + '</td>' +
+      '<td>' + fhHtml(sn.inicio) + '</td><td>' + fhHtml(sn.modificado) + '</td>' +
       '<td>' + esc(sn.evaluado || '—') + '</td>' +
       '<td><div class="cum"><b style="color:' + colorPct(sn.global) + '">' + pct1(sn.global) + '</b><i><u style="width:' + Math.round(clamp01(sn.global) * 100) + '%;background:' + colorPct(sn.global) + '"></u></i></div></td>' +
       '<td>' + (esAct ? '' : '<button class="btn" data-per="' + esc(sn.periodo) + '">Abrir este mes</button>') + '</td></tr>';
@@ -3494,23 +3628,12 @@ function armarMensajeCorreo(nombre, filas, completo) {
   return L.join('\n');
 }
 
-function construirMailto(para, asunto, cuerpo) {
-  const dest = listaCorreos(para).join(',');
-  let b = String(cuerpo).replace(/\r?\n/g, '\r\n');
-  const arma = function (x) { return 'mailto:' + dest + '?subject=' + encodeURIComponent(asunto) + '&body=' + encodeURIComponent(x); };
-  let recortado = false;
-  while (arma(b).length > 1900 && b.length > 200) { b = b.slice(0, Math.floor(b.length * 0.85)); recortado = true; }
-  if (recortado) b += '\r\n\r\n[Mensaje recortado por el límite de tu programa de correo. Pega aquí el texto completo, que ya quedó copiado.]';
-  return { url: arma(b), recortado: recortado };
-}
-
 function b64utf8(str) {
   const bytes = new TextEncoder().encode(str);
   let bin = '';
   bytes.forEach(function (x) { bin += String.fromCharCode(x); });
   return btoa(bin);
 }
-function enLineas76(b64) { return b64.replace(/(.{76})/g, '$1\r\n'); }
 function nombreArchivoSeguro(n) { return String(n).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9._-]/g, '_'); }
 
 function htmlCronogramaExcel(filas) {
@@ -3533,31 +3656,6 @@ function htmlCronogramaExcel(filas) {
   return h.join('\r\n');
 }
 
-function construirEml(para, asunto, cuerpo, adjNombre, adjHtml) {
-  const b = '----=_KPI_' + Date.now().toString(36);
-  const L = [];
-  L.push('To: ' + listaCorreos(para).join(', '));
-  L.push('Subject: =?UTF-8?B?' + b64utf8(asunto) + '?=');
-  L.push('X-Unsent: 1');
-  L.push('MIME-Version: 1.0');
-  L.push('Content-Type: multipart/mixed; boundary="' + b + '"');
-  L.push('');
-  L.push('--' + b);
-  L.push('Content-Type: text/plain; charset="UTF-8"');
-  L.push('Content-Transfer-Encoding: base64');
-  L.push('');
-  L.push(enLineas76(b64utf8(String(cuerpo).replace(/\r?\n/g, '\r\n'))));
-  L.push('--' + b);
-  L.push('Content-Type: application/vnd.ms-excel; name="' + adjNombre + '"');
-  L.push('Content-Transfer-Encoding: base64');
-  L.push('Content-Disposition: attachment; filename="' + adjNombre + '"');
-  L.push('');
-  L.push(enLineas76(b64utf8('\ufeff' + adjHtml)));
-  L.push('--' + b + '--');
-  L.push('');
-  return L.join('\r\n');
-}
-
 async function copiarTexto(t) {
   try { await navigator.clipboard.writeText(t); return true; } catch (e) { /* respaldo */ }
   try {
@@ -3570,51 +3668,185 @@ async function copiarTexto(t) {
   } catch (e) { return false; }
 }
 
-/* Ventana de correo: destinatarios, asunto y mensaje editables */
+/* ---------- Envío directo (Google Apps Script en la cuenta de Gmail del usuario) ---------- */
+const CFG_ENVIO_KEY = 'KPI_EnvioCorreo';
+
+const CODIGO_APPS_SCRIPT = [
+  "// Clave que debe coincidir con la que escribas en la página",
+  "const CLAVE = 'cambia-esta-clave';",
+  "",
+  "function doPost(e) {",
+  "  try {",
+  "    const d = JSON.parse(e.postData.contents);",
+  "    if (d.clave !== CLAVE) return salida({ ok: false, error: 'Clave incorrecta' });",
+  "    const opciones = { name: d.remitente || 'Evaluación de KPI' };",
+  "    if (d.adjunto && d.adjunto.base64) {",
+  "      opciones.attachments = [Utilities.newBlob(Utilities.base64Decode(d.adjunto.base64), d.adjunto.mime, d.adjunto.nombre)];",
+  "    }",
+  "    MailApp.sendEmail(d.para, d.asunto, d.cuerpo, opciones);",
+  "    return salida({ ok: true });",
+  "  } catch (err) {",
+  "    return salida({ ok: false, error: String(err) });",
+  "  }",
+  "}",
+  "",
+  "function salida(o) {",
+  "  return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);",
+  "}",
+  "",
+  "// Ejecútala una vez para dar permiso de envío",
+  "function autorizar() { MailApp.getRemainingDailyQuota(); }"
+].join('\n');
+
+function leerConfigEnvio() {
+  try { return JSON.parse(localStorage.getItem(CFG_ENVIO_KEY) || '{}') || {}; } catch (e) { return {}; }
+}
+function envioConfigurado() {
+  const c = leerConfigEnvio();
+  return !!(c.url && c.clave);
+}
+
+async function enviarPorApi(o) {
+  const c = leerConfigEnvio();
+  if (!c.url || !c.clave) throw new Error('Falta configurar el envío.');
+  const payload = {
+    clave: c.clave,
+    para: listaCorreos(o.para).join(','),
+    asunto: o.asunto,
+    cuerpo: o.cuerpo,
+    remitente: txtNombreEvaluador.value.trim() || 'Evaluación de KPI',
+    adjunto: o.adjuntoHtml ? { nombre: o.adjuntoNombre, mime: 'application/vnd.ms-excel', base64: b64utf8('\ufeff' + o.adjuntoHtml) } : null
+  };
+  let resp;
+  try {
+    resp = await fetch(c.url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
+  } catch (e) {
+    throw new Error('No se pudo confirmar el envío (el navegador no alcanzó el servicio). Revisa la bandeja del destinatario antes de reintentar para no duplicar el correo.');
+  }
+  let j;
+  try { j = await resp.json(); } catch (e) { throw new Error('El servicio respondió algo inesperado. Revisa que la implementación esté publicada para «Cualquier usuario».'); }
+  if (!j.ok) throw new Error(j.error || 'El servicio rechazó el envío.');
+}
+
+function dlgConfigEnvio() {
+  return modal(function (box, cerrar) {
+    const c = leerConfigEnvio();
+    box.innerHTML =
+      '<h3 class="dlg-title">Configurar el envío de correos</h3>' +
+      '<p class="dlg-text" style="margin-bottom:10px">Se hace una sola vez. Los correos saldrán de tu propio Gmail, directo desde esta página.</p>' +
+      '<ol class="steps">' +
+      '<li>Entra a <b>script.google.com</b> con tu cuenta de Gmail y crea un <b>Nuevo proyecto</b>.</li>' +
+      '<li>Borra lo que haya y pega este código (cambia la clave por una tuya):</li></ol>' +
+      '<textarea id="k_code" class="dlg-input code" rows="8" readonly></textarea>' +
+      '<div style="margin:6px 0 10px"><button class="btn" id="k_copy">Copiar código</button></div>' +
+      '<ol class="steps" start="3">' +
+      '<li>Elige la función <b>autorizar</b>, pulsa <b>Ejecutar</b> y acepta los permisos.</li>' +
+      '<li><b>Implementar → Nueva implementación → Aplicación web</b>. Ejecutar como: <b>Yo</b>. Quién tiene acceso: <b>Cualquier usuario</b>.</li>' +
+      '<li>Copia la <b>URL de la aplicación web</b> (termina en /exec) y pégala aquí:</li></ol>' +
+      '<div class="dlg-grid" style="grid-template-columns:90px 1fr">' +
+      '<label>URL</label><input id="k_url" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off">' +
+      '<label>Clave</label><input id="k_clave" placeholder="La misma que pusiste en el código" autocomplete="off">' +
+      '<label>Probar con</label><input id="k_test" placeholder="Tu correo, para recibir un mensaje de prueba" autocomplete="off">' +
+      '</div>' +
+      '<p class="dlg-note" id="k_estado">La URL y la clave se guardan solo en este navegador.</p>' +
+      '<div class="dlg-btns" style="flex-wrap:wrap"><button class="btn blue" id="k_save">Guardar</button>' +
+      '<button class="btn" id="k_probar">Guardar y enviar prueba</button><button class="btn" id="k_cancel">Cancelar</button></div>';
+    const g = function (i) { return box.querySelector(i); };
+    g('#k_code').value = CODIGO_APPS_SCRIPT;
+    g('#k_url').value = c.url || '';
+    g('#k_clave').value = c.clave || '';
+    const estado = function (t) { g('#k_estado').textContent = t; };
+    g('#k_copy').onclick = async function () { estado((await copiarTexto(CODIGO_APPS_SCRIPT)) ? 'Código copiado.' : 'No se pudo copiar; selecciónalo y cópialo a mano.'); };
+    const guardar = function () {
+      const url = g('#k_url').value.trim(), clave = g('#k_clave').value.trim();
+      if (!/^https:\/\/script\.google\.com\/macros\/s\/[^\s]+\/exec$/.test(url)) { estado('La URL no es válida: debe empezar con https://script.google.com/macros/s/ y terminar en /exec.'); return false; }
+      if (!clave) { estado('Escribe la clave (la misma que pusiste en el código).'); return false; }
+      localStorage.setItem(CFG_ENVIO_KEY, JSON.stringify({ url: url, clave: clave }));
+      return true;
+    };
+    g('#k_save').onclick = function () { if (guardar()) cerrar(true); };
+    g('#k_probar').onclick = async function () {
+      if (!guardar()) return;
+      if (!correosValidos(g('#k_test').value)) { estado('Escribe un correo válido en «Probar con».'); return; }
+      estado('Enviando prueba…');
+      try {
+        await enviarPorApi({ para: g('#k_test').value, asunto: 'Prueba de envío - Evaluación de KPI', cuerpo: 'Si lees esto, el envío de correos desde la página ya funciona.' });
+        estado('Listo: prueba enviada. Revisa la bandeja (y spam) de ese correo.');
+      } catch (ex) { estado('Error: ' + ex.message); }
+    };
+    g('#k_cancel').onclick = function () { cerrar(false); };
+  }, { width: 660, cancelValue: false });
+}
+
+function registrarEnvio(correo) {
+  const key = areaKey();
+  db[key + '__Envio|' + periodoActivo(key) + '|' + String(correo).toLowerCase()] = new Date().toISOString();
+  guardarDB();
+}
+function ultimoEnvio(correo) {
+  const key = areaKey();
+  return db[key + '__Envio|' + periodoActivo(key) + '|' + String(correo).toLowerCase()] || '';
+}
+
+/* Ventana de correo: destinatarios, asunto y mensaje editables; se envía desde la página */
 function dlgCorreo(o) {
   return modal(function (box, cerrar) {
     box.innerHTML =
       '<h3 class="dlg-title">' + esc(o.titulo) + '</h3>' +
       '<div class="dlg-grid" style="grid-template-columns:90px 1fr">' +
-      '<label>Para</label><input id="c_para" placeholder="correo@empresa.com (varios: separa con coma)">' +
+      '<label>Para</label><input id="c_para" placeholder="correo@gmail.com (varios: separa con coma)">' +
       '<label>Asunto</label><input id="c_asunto">' +
-      '<label style="align-self:start;padding-top:8px">Mensaje</label><textarea id="c_cuerpo" class="dlg-input" rows="14" spellcheck="true"></textarea>' +
+      '<label style="align-self:start;padding-top:8px">Mensaje</label><textarea id="c_cuerpo" class="dlg-input" rows="13" spellcheck="true"></textarea>' +
       '</div>' +
-      '<p class="dlg-note" id="c_estado">«Abrir en mi correo» abre tu programa de correo con el mensaje listo. «Descargar borrador» genera un archivo .eml con el Excel adjunto: ábrelo y envíalo.</p>' +
+      '<label class="chk"><input type="checkbox" id="c_adj" checked> Adjuntar el cronograma en Excel</label>' +
+      '<p class="dlg-note" id="c_estado"></p>' +
       '<div class="dlg-btns" style="flex-wrap:wrap">' +
-      '<button class="btn blue" id="c_mail">Abrir en mi correo</button>' +
-      '<button class="btn" id="c_eml">Descargar borrador con Excel (.eml)</button>' +
+      '<button class="btn blue" id="c_send">Enviar ahora</button>' +
       '<button class="btn" id="c_copy">Copiar mensaje</button>' +
+      '<button class="btn" id="c_cfg">Configurar envío</button>' +
       '<button class="btn" id="c_close">Cerrar</button></div>';
     const g = function (i) { return box.querySelector(i); };
     g('#c_para').value = o.para || '';
     g('#c_asunto').value = o.asunto;
     g('#c_cuerpo').value = o.cuerpo;
     const estado = function (t) { g('#c_estado').textContent = t; };
-    const validarPara = function () {
-      if (!correosValidos(g('#c_para').value)) { estado('Escribe al menos un correo válido en «Para».'); g('#c_para').focus(); return false; }
-      return true;
-    };
-    g('#c_mail').onclick = async function () {
-      if (!validarPara()) return;
-      const r = construirMailto(g('#c_para').value, g('#c_asunto').value, g('#c_cuerpo').value);
-      if (r.recortado) await copiarTexto(g('#c_cuerpo').value);
-      const a = document.createElement('a');
-      a.href = r.url; a.style.display = 'none';
-      document.body.appendChild(a); a.click(); a.remove();
-      estado(r.recortado
-        ? 'Se abrió tu correo, pero el mensaje era largo: quedó copiado completo en el portapapeles para que lo pegues.'
-        : 'Se abrió tu programa de correo. Si no ocurrió nada, usa «Descargar borrador» o «Copiar mensaje».');
-    };
-    g('#c_eml').onclick = function () {
-      if (!validarPara()) return;
-      const nombre = nombreArchivoSeguro('CRONOGRAMA_' + areaLabel().replace(/ /g, '_') + '_' + periodoActivo(areaKey())) + '.xls';
-      const eml = construirEml(g('#c_para').value, g('#c_asunto').value, g('#c_cuerpo').value, nombre, htmlCronogramaExcel(o.filas));
-      descargar('Borrador_' + nombre.replace(/\.xls$/, '') + '.eml', eml, 'message/rfc822');
-      estado('Borrador descargado. Ábrelo con tu programa de correo (Outlook lo abre como mensaje nuevo con el Excel adjunto) y envíalo.');
+    estado(envioConfigurado()
+      ? 'El correo sale de tu Gmail al pulsar «Enviar ahora».'
+      : 'Antes de enviar hay que configurar el envío una sola vez (botón «Configurar envío»).');
+
+    g('#c_send').onclick = async function () {
+      if (!envioConfigurado()) {
+        estado('Primero configura el envío.');
+        if (await dlgConfigEnvio()) estado('Configuración guardada. Pulsa «Enviar ahora».');
+        return;
+      }
+      if (!correosValidos(g('#c_para').value)) { estado('Escribe al menos un correo válido en «Para».'); g('#c_para').focus(); return; }
+      const btn = g('#c_send');
+      btn.disabled = true;
+      estado('Enviando…');
+      g('#c_estado').classList.remove('ok');
+      try {
+        const nombre = nombreArchivoSeguro('CRONOGRAMA_' + areaLabel().replace(/ /g, '_') + '_' + periodoActivo(areaKey())) + '.xls';
+        await enviarPorApi({
+          para: g('#c_para').value, asunto: g('#c_asunto').value, cuerpo: g('#c_cuerpo').value,
+          adjuntoNombre: nombre, adjuntoHtml: g('#c_adj').checked ? htmlCronogramaExcel(o.filas) : null
+        });
+        listaCorreos(g('#c_para').value).forEach(registrarEnvio);
+        renderCorreos();
+        estado('✓ Enviado a ' + listaCorreos(g('#c_para').value).join(', ') + '.');
+        g('#c_estado').classList.add('ok');
+        btn.textContent = 'Enviado';
+        setTimeout(function () { btn.disabled = false; btn.textContent = 'Enviar de nuevo'; }, 2500);
+      } catch (ex) {
+        estado('No se envió: ' + ex.message);
+        btn.disabled = false;
+      }
     };
     g('#c_copy').onclick = async function () {
       estado((await copiarTexto(g('#c_cuerpo').value)) ? 'Mensaje copiado al portapapeles.' : 'No se pudo copiar. Selecciona el texto y cópialo manualmente.');
+    };
+    g('#c_cfg').onclick = async function () {
+      if (await dlgConfigEnvio()) estado('Configuración guardada.');
     };
     g('#c_close').onclick = function () { cerrar(true); };
   }, { width: 640, cancelValue: true });
@@ -3649,7 +3881,8 @@ function renderCorreos() {
     const inicial = (g.nombre || g.correo).trim().charAt(0).toUpperCase();
     h += '<div class="mail-row"><div class="avatar">' + esc(inicial) + '</div>' +
       '<div class="mail-who"><b>' + esc(g.nombre || 'Sin nombre') + '</b><span>' + esc(g.correo) + '</span></div>' +
-      '<div class="mail-n">' + g.filas.length + (g.filas.length === 1 ? ' actividad' : ' actividades') + '</div>' +
+      '<div class="mail-n">' + g.filas.length + (g.filas.length === 1 ? ' actividad' : ' actividades') +
+      (ultimoEnvio(g.correo) ? '<br><span class="sent">Enviado ' + esc(fmtFechaHora(ultimoEnvio(g.correo))) + '</span>' : '') + '</div>' +
       '<button class="btn blue" data-i="' + i + '">Enviar cronograma</button></div>';
   });
   if (!r.lista.length) {
@@ -3729,6 +3962,7 @@ function inicializar() {
     if (b) abrirCorreoResponsable(Number(b.dataset.i));
   });
   $('#btnCorreoCompleto').onclick = abrirCorreoCompleto;
+  $('#btnConfigEnvio').onclick = dlgConfigEnvio;
 
   conectarGrid();
 
@@ -3752,6 +3986,7 @@ function inicializar() {
   $('#btnEditarSeccion').onclick = btnEditarSeccion_Click;
   $('#homeGrid').addEventListener('click', clickHome);
 
+  setInterval(function () { if (!$('#appView').hidden) actualizarFechas(); }, 60000);
   mostrarHome();
 }
 
