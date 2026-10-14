@@ -572,6 +572,15 @@ table.meses { width: 100%; border-collapse: collapse; min-width: 720px; }
 .pond-hint.over { color: var(--bad); font-weight: 600; }
 .dlg-note.ok { color: var(--ok); font-weight: 600; }
 
+.mail-btns { display: flex; gap: 6px; }
+.toast.bad i { background: var(--bad); }
+.toast.bad i::after { content: "!"; border: 0; transform: none; left: 0; top: 0; width: 26px; height: 26px; text-align: center; line-height: 26px; font-weight: 800; font-size: 15px; }
+@media (max-width: 640px) { .mail-btns { grid-column: 1 / -1; } .mail-btns .btn { flex: 1; } }
+
+.side-foot { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--ink-3); display: flex; flex-direction: column; gap: 2px; }
+.nav-add.plain { color: var(--side-text); font-size: 13px; }
+.side > .nav-add.plain, .side-foot .nav-add.plain { border: 0; justify-content: flex-start; }
+
 </style>
 </head>
 <body>
@@ -595,6 +604,11 @@ table.meses { width: 100%; border-collapse: collapse; min-width: 720px; }
     <div class="nav-label">Direcciones</div>
     <nav id="navDirs" aria-label="Direcciones y áreas"></nav>
     <button class="nav-add" id="navNuevaDir">+ Nueva dirección</button>
+    <div class="side-foot">
+      <div class="nav-label">Datos</div>
+      <button class="nav-add plain" id="btnRespaldo">Descargar copia de seguridad</button>
+      <button class="nav-add plain" id="btnRestaurar">Restaurar copia</button>
+    </div>
   </aside>
 
   <div class="main">
@@ -604,7 +618,7 @@ table.meses { width: 100%; border-collapse: collapse; min-width: 720px; }
     <section class="home" id="home">
       <header class="page-head">
         <h1>Resumen general</h1>
-        <p>Cumplimiento de cada dirección con lo capturado hasta hoy. Entra a una dirección, o directo a una de sus áreas, para evaluar.</p>
+        <p>Cumplimiento de cada dirección con lo capturado hasta hoy. Entra a una dirección, o directo a una de sus áreas, para evaluar. Los datos se guardan en este navegador: descarga una copia de seguridad de vez en cuando.</p>
       </header>
       <div class="home-grid" id="homeGrid"></div>
     </section>
@@ -758,9 +772,10 @@ table.meses { width: 100%; border-collapse: collapse; min-width: 720px; }
           <div class="mail-head">
             <div>
               <h2 class="panel-title" style="margin:0">Enviar por correo</h2>
-              <p class="hint" style="margin:2px 0 0">Cada responsable recibe solo las actividades que tiene asignadas. El responsable y su correo se asignan en Captura, con «Modificar». El envío sale directo desde esta página, con tu Gmail.</p>
+              <p class="hint" style="margin:2px 0 0">Cada responsable recibe solo las actividades que tiene asignadas. El responsable y su correo se asignan en Captura, con «Modificar». El envío es automático desde esta página, con un clic y sin abrir tu correo.</p>
             </div>
             <div class="group">
+              <button class="btn green" id="btnEnviarTodos">Enviar a todos los responsables</button>
               <button class="btn" id="btnConfigEnvio">Configurar envío</button>
               <button class="btn" id="btnCorreoCompleto">Enviar cronograma completo…</button>
             </div>
@@ -1561,7 +1576,7 @@ function limiteSecciones() { return esAreaBase(dirActual, cmbArea.value) ? 0.9 :
 function leerEstructura(key) {
   try { const v = JSON.parse(db[key + '__Estructura'] || 'null'); return Array.isArray(v) ? v : null; } catch (e) { return null; }
 }
-function guardarDB() { try { localStorage.setItem(DB_KEY, JSON.stringify(db)); } catch (e) { /* sin espacio */ } }
+function guardarDB() { try { localStorage.setItem(DB_KEY, JSON.stringify(db)); } catch (e) { avisarErrorGuardado(e); } }
 function nombreSeguro(t) {
   return String(t || '').trim().toUpperCase().replace(/[=|~\/_]/g, ' ').replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
 }
@@ -1717,6 +1732,18 @@ function correosValidos(txt) {
   return l.length > 0 && l.every(function (c) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c); });
 }
 
+function existeTareaEnSeccion(sec, tarea, excluir) {
+  const t = String(tarea).trim().toLowerCase();
+  return rows.some(function (x) { return x !== excluir && x.sec === sec && String(x.tarea).trim().toLowerCase() === t; });
+}
+function validadorNombre(sec, excluir) {
+  return function (t) {
+    if (!t) return 'Escribe el nombre de la actividad.';
+    if (existeTareaEnSeccion(sec, t, excluir)) return 'Ya existe una actividad con ese nombre en esta subsección. Usa un nombre distinto: las calificaciones se guardan por nombre y se mezclarían.';
+    return '';
+  };
+}
+
 function tryParseNum(texto) {
   const s = String(texto == null ? '' : texto).replace('%', '').trim().replace(/,/g, '.');
   if (s === '') return 0;
@@ -1725,7 +1752,7 @@ function tryParseNum(texto) {
 }
 
 /* FormDialogActividad */
-function dlgActividad(seccion, pTarea, pRegla, pPond, pErr, pCumpl, pObs, pEv, pEvImg, pRespN, pRespC, pOtros) {
+function dlgActividad(seccion, pTarea, pRegla, pPond, pErr, pCumpl, pObs, pEv, pEvImg, pRespN, pRespC, pOtros, pValidar) {
   return modal(function (box, cerrar) {
     box.innerHTML =
       '<h3 class="dlg-title">Gestión de Actividad / Indicador</h3>' +
@@ -1781,6 +1808,14 @@ function dlgActividad(seccion, pTarea, pRegla, pPond, pErr, pCumpl, pObs, pEv, p
     };
     g('#d_cancel').onclick = function () { cerrar(null); };
     g('#d_ok').onclick = async function () {
+      if (pValidar) {
+        const errNombre = pValidar(g('#d_tarea').value.trim());
+        if (errNombre) {
+          await showMessage(errNombre, 'Atención', 'warn');
+          g('#d_tarea').focus();
+          return;
+        }
+      }
       const correos = g('#d_respc').value.trim();
       if (correos && !correosValidos(correos)) {
         await showMessage('El correo del responsable no es válido. Escribe uno como nombre@empresa.com (si son varios, sepáralos con coma).', 'Atención', 'warn');
@@ -1924,7 +1959,19 @@ function guardarCambiosInstantaneos(opt) {
     localStorage.setItem(DB_KEY, JSON.stringify(db));
     if ($('#navDirs')) renderSidebar();
     if (!nav && cmbArea.value) { llenarPeriodos(); actualizarFechas(); renderMeses(); programarToast(); }
-  } catch (e) { /* igual que el original: se ignora */ }
+  } catch (e) {
+    avisarErrorGuardado(e);
+  }
+}
+
+let ultimoErrorGuardado = 0;
+function avisarErrorGuardado(e) {
+  if (Date.now() - ultimoErrorGuardado < 10000) return;
+  ultimoErrorGuardado = Date.now();
+  const lleno = e && (e.name === 'QuotaExceededError' || /quota/i.test(String(e.message)));
+  if (typeof toastAhora === 'function') {
+    toastAhora(lleno ? 'No se pudo guardar: el espacio del navegador está lleno. Descarga una copia de seguridad.' : 'No se pudo guardar en este navegador: ' + (e && e.message ? e.message : e), false);
+  }
 }
 
 function aplicarCalificacionesGuardadas() {
@@ -2044,7 +2091,7 @@ function reajustarPonderacionesSecciones() {
 /* =====================================================================
    Cambio de área (cmbAreaEvaluada_SelectedIndexChanged)
    ===================================================================== */
-function setupArea(area, desdeArchivo) {
+function setupArea(area, desdeArchivo, seccionPreferida) {
   const def = defArea(dirActual, area);
 
   secciones = def.secciones.map(function (s) { return { nombre: s[0], pond: s[1], valor: 0 }; });
@@ -2064,7 +2111,7 @@ function setupArea(area, desdeArchivo) {
   aplicarSeccionesExtraDelArea(keyArea, desdeArchivo || !!est);
   if (est) rows = rows.filter(function (r) { return secciones.some(function (s) { return s.nombre === r.sec; }); });
   reconstruirCardsUI();
-  llenarComboSecciones();
+  llenarComboSecciones(seccionPreferida);
   if (!desdeArchivo) aplicarCalificacionesGuardadas();
   calcularKPIsGlobales();
   aplicarFiltrosGrid();
@@ -2396,14 +2443,18 @@ async function btnAgregarActividad_Click() {
     return;
   }
   const secNombre = cmbSec.value;
-  const r = await dlgActividad(secNombre, '', '', 0.1, 0, 1.0, '', '', '', '', '', rows.filter(function (x) { return x.sec === secNombre && x !== null; }).reduce(function (a, x) { return a + num(x.pond, 0); }, 0));
+  const r = await dlgActividad(secNombre, '', '', 0.1, 0, 1.0, '', '', '', '', '', rows.filter(function (x) { return x.sec === secNombre && x !== null; }).reduce(function (a, x) { return a + num(x.pond, 0); }, 0), validadorNombre(secNombre, null));
   if (r) {
     const nf = crearFila(secNombre, r.tarea, r.regla, r.pond, r.err, r.cumpl, r.obs, r.evid, r.evImg);
     nf.respNombre = r.respNombre; nf.respCorreo = r.respCorreo;
     rows.push(nf);
     avisar('Actividad agregada y guardada');
+    txtBuscar.value = '';
+    selectedRow = nf;
     calcularKPIsGlobales();
     guardarCambiosInstantaneos();
+    const trNueva = gridBody.querySelector('tr.sel');
+    if (trNueva) trNueva.scrollIntoView({ block: 'nearest' });
   }
 }
 
@@ -2413,7 +2464,7 @@ async function btnModificarActividad_Click() {
     return;
   }
   const dr = selectedRow;
-  const r = await dlgActividad(dr.sec, dr.tarea, dr.regla, num(dr.pond, 0), num(dr.err, 0), num(dr.cumpl, 1), dr.obs, dr.evid, dr.evImg, dr.respNombre, dr.respCorreo, rows.filter(function (x) { return x.sec === dr.sec && x !== dr; }).reduce(function (a, x) { return a + num(x.pond, 0); }, 0));
+  const r = await dlgActividad(dr.sec, dr.tarea, dr.regla, num(dr.pond, 0), num(dr.err, 0), num(dr.cumpl, 1), dr.obs, dr.evid, dr.evImg, dr.respNombre, dr.respCorreo, rows.filter(function (x) { return x.sec === dr.sec && x !== dr; }).reduce(function (a, x) { return a + num(x.pond, 0); }, 0), validadorNombre(dr.sec, dr));
   if (r) {
     dr.tarea = r.tarea; dr.regla = r.regla; dr.pond = r.pond; dr.err = r.err;
     dr.cumpl = r.cumpl; dr.obs = r.obs; dr.evid = r.evid; dr.evImg = r.evImg;
@@ -2476,7 +2527,7 @@ async function btnAgregarSeccion_Click() {
   }
 
   // Una sección sin actividades daría 0% y bajaría el global: se captura la primera actividad de inmediato
-  const act = await dlgActividad(nombre, '', '', 1.0, 0, 1.0, '', '', '', '', '', 0);
+  const act = await dlgActividad(nombre, '', '', 1.0, 0, 1.0, '', '', '', '', '', 0, validadorNombre(nombre, null));
   if (!act) {
     await showMessage('La sección no se creó: necesita al menos una actividad.', 'Atención', 'info');
     return;
@@ -2597,7 +2648,7 @@ async function btnReiniciarArea_Click() {
 
     if (cmbArea.value) {
       delete db[areaKey() + '__Estructura'];
-      setupArea(cmbArea.value, false);
+      setupArea(cmbArea.value, false, cmbSec.selectedIndex > 0 ? cmbSec.value : undefined);
     }
 
     guardarCambiosInstantaneos();
@@ -3438,6 +3489,7 @@ function cambiarPeriodo(nuevo) {
   const key = areaKey();
   const actual = periodoActivo(key);
   if (nuevo === actual) { llenarPeriodos(); return; }
+  const seccionVista = cmbSec.selectedIndex > 0 ? cmbSec.value : undefined;
 
   // Datos anteriores a esta función: se conservan como foto del mes que se deja
   if (!leerSnap(key, actual) && hayCambiosFrenteAlOriginal()) guardarSnapshotPeriodo(key);
@@ -3449,7 +3501,7 @@ function cambiarPeriodo(nuevo) {
   guardarDB();
 
   selectedRow = null;
-  setupArea(cmbArea.value, false);
+  setupArea(cmbArea.value, false, seccionVista);
   renderSidebar();
 }
 
@@ -3502,6 +3554,14 @@ function actualizarFechas() {
 
 let toastTimer = null, toastDelay = null, avisoPendiente = null;
 function avisar(texto) { avisoPendiente = texto; }
+function toastAhora(msg, ok) {
+  const box = $('#toasts');
+  if (!box) return;
+  const ahora = new Date().toISOString();
+  box.innerHTML = '<div class="toast' + (ok === false ? ' bad' : '') + '" role="status"><i></i><div><b>' + esc(msg) + '</b><span>' + esc(fmtFechaLarga(ahora)) + ', ' + esc(fmtHora(ahora)) + '</span></div></div>';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { box.innerHTML = ''; }, ok === false ? 6000 : 3200);
+}
 function programarToast() {
   clearTimeout(toastDelay);
   toastDelay = setTimeout(function () {
@@ -3671,6 +3731,13 @@ async function copiarTexto(t) {
 /* ---------- Envío directo (Google Apps Script en la cuenta de Gmail del usuario) ---------- */
 const CFG_ENVIO_KEY = 'KPI_EnvioCorreo';
 
+/* >>> ENVÍO AUTOMÁTICO PARA TODOS LOS USUARIOS <<<
+   Pega aquí, entre las comillas, la URL de la aplicación web de Google y la clave que elegiste.
+   Con eso cualquiera que abra la página envía correos con un clic, sin configurar nada.
+   (Si lo dejas vacío, cada navegador se configura una vez con el botón «Configurar envío».) */
+const ENVIO_URL_PREDETERMINADA = '';
+const ENVIO_CLAVE_PREDETERMINADA = '';
+
 const CODIGO_APPS_SCRIPT = [
   "// Clave que debe coincidir con la que escribas en la página",
   "const CLAVE = 'cambia-esta-clave';",
@@ -3699,7 +3766,9 @@ const CODIGO_APPS_SCRIPT = [
 ].join('\n');
 
 function leerConfigEnvio() {
-  try { return JSON.parse(localStorage.getItem(CFG_ENVIO_KEY) || '{}') || {}; } catch (e) { return {}; }
+  let c = {};
+  try { c = JSON.parse(localStorage.getItem(CFG_ENVIO_KEY) || '{}') || {}; } catch (e) { c = {}; }
+  return { url: c.url || ENVIO_URL_PREDETERMINADA, clave: c.clave || ENVIO_CLAVE_PREDETERMINADA };
 }
 function envioConfigurado() {
   const c = leerConfigEnvio();
@@ -3862,6 +3931,57 @@ function abrirCorreoResponsable(i) {
   });
 }
 
+function datosEnvioGrupo(g) {
+  const nombre = nombreArchivoSeguro('CRONOGRAMA_' + areaLabel().replace(/ /g, '_') + '_' + periodoActivo(areaKey())) + '.xls';
+  return {
+    para: g.correo, asunto: asuntoCorreo(), cuerpo: armarMensajeCorreo(g.nombre, g.filas, false),
+    adjuntoNombre: nombre, adjuntoHtml: htmlCronogramaExcel(g.filas)
+  };
+}
+
+async function asegurarConfigEnvio() {
+  if (envioConfigurado()) return true;
+  await showMessage('Para enviar de forma automática hay que conectar el envío una sola vez con tu Gmail. Te muestro cómo.', 'Falta configurar el envío', 'info');
+  return await dlgConfigEnvio() && envioConfigurado();
+}
+
+async function enviarRapido(i) {
+  const g = gruposResp[i];
+  if (!g) return;
+  if (!(await asegurarConfigEnvio())) return;
+  const btn = document.querySelector('#mailList [data-send="' + i + '"]');
+  if (btn) { btn.disabled = true; btn.textContent = 'Enviando…'; }
+  try {
+    await enviarPorApi(datosEnvioGrupo(g));
+    registrarEnvio(g.correo);
+    toastAhora('Cronograma enviado a ' + (g.nombre || g.correo));
+  } catch (ex) {
+    toastAhora('No se envió a ' + (g.nombre || g.correo) + ': ' + ex.message, false);
+  }
+  renderCorreos();
+}
+
+async function enviarATodos() {
+  const r = responsablesDeArea();
+  if (!r.lista.length) {
+    await showMessage('Ninguna actividad tiene responsable con correo. Asígnalo en Captura con «Modificar».', 'Sin responsables', 'info');
+    return;
+  }
+  if (!(await asegurarConfigEnvio())) return;
+  const ok = await showConfirm('Se enviará a ' + r.lista.length + (r.lista.length === 1 ? ' responsable' : ' responsables') +
+    ' (' + r.lista.map(function (g) { return g.nombre || g.correo; }).join(', ') + '), cada uno con sus actividades.\n\n¿Enviar ahora?', 'Enviar a todos los responsables', 'question');
+  if (!ok) return;
+  let enviados = 0;
+  const fallos = [];
+  for (const g of r.lista) {
+    try { await enviarPorApi(datosEnvioGrupo(g)); registrarEnvio(g.correo); enviados++; }
+    catch (ex) { fallos.push((g.nombre || g.correo) + ': ' + ex.message); }
+  }
+  renderCorreos();
+  if (fallos.length) await showMessage('Enviados: ' + enviados + ' de ' + r.lista.length + '.\n\nNo se enviaron:\n' + fallos.join('\n'), 'Envío con errores', 'warn');
+  else toastAhora('Cronograma enviado a ' + enviados + (enviados === 1 ? ' responsable' : ' responsables'));
+}
+
 function abrirCorreoCompleto() {
   dlgCorreo({
     titulo: 'Enviar el cronograma completo',
@@ -3883,7 +4003,8 @@ function renderCorreos() {
       '<div class="mail-who"><b>' + esc(g.nombre || 'Sin nombre') + '</b><span>' + esc(g.correo) + '</span></div>' +
       '<div class="mail-n">' + g.filas.length + (g.filas.length === 1 ? ' actividad' : ' actividades') +
       (ultimoEnvio(g.correo) ? '<br><span class="sent">Enviado ' + esc(fmtFechaHora(ultimoEnvio(g.correo))) + '</span>' : '') + '</div>' +
-      '<button class="btn blue" data-i="' + i + '">Enviar cronograma</button></div>';
+      '<div class="mail-btns"><button class="btn blue" data-send="' + i + '">Enviar ahora</button>' +
+      '<button class="btn" data-i="' + i + '">Ver mensaje</button></div></div>';
   });
   if (!r.lista.length) {
     h += '<p class="empty">Ninguna actividad tiene responsable con correo. Asígnalo en Captura: selecciona la actividad, pulsa «Modificar» y llena «Responsable» y «Correo».</p>';
@@ -3892,6 +4013,45 @@ function renderCorreos() {
     h += '<p class="mail-warn">' + r.sin.length + (r.sin.length === 1 ? ' actividad no tiene' : ' actividades no tienen') + ' responsable con correo y no se incluyen en estos envíos.</p>';
   }
   cont.innerHTML = h;
+}
+
+/* =====================================================================
+   Copia de seguridad (los datos viven en el navegador)
+   ===================================================================== */
+async function descargarRespaldo() {
+  const ids = new Set();
+  Object.keys(db).forEach(function (k) {
+    if (/\|EvidenciaImg$/.test(k) && db[k]) ids.add(db[k]);
+    if (k.indexOf('__Mes|') >= 0) {
+      try { (JSON.parse(db[k]).filas || []).forEach(function (f) { if (f.evImg) ids.add(f.evImg); }); } catch (e) { /* ignorar */ }
+    }
+  });
+  const imagenes = {};
+  for (const id of ids) { const d = await IMG.get(id); if (d) imagenes[id] = d; }
+  descargar('Respaldo_KPI_' + stamp(true) + '.json', JSON.stringify({ tipo: 'KPI_RESPALDO', version: 1, fecha: new Date().toISOString(), db: db, imagenes: imagenes }), 'application/json');
+  toastAhora('Copia de seguridad descargada');
+}
+
+async function restaurarRespaldo() {
+  const f = await pickFile('.json,application/json');
+  if (!f) return;
+  try {
+    const j = JSON.parse(await f.text());
+    if (j.tipo !== 'KPI_RESPALDO' || !j.db || typeof j.db !== 'object') throw new Error('El archivo no es una copia de seguridad de esta aplicación.');
+    const ok = await showConfirm('Se reemplazarán TODOS los datos de este navegador por los de la copia del ' + fmtFechaLarga(j.fecha) + '.\n\n¿Continuar?', 'Restaurar copia de seguridad', 'warn');
+    if (!ok) return;
+    for (const id of Object.keys(j.imagenes || {})) await IMG.put(id, j.imagenes[id]);
+    db = j.db;
+    guardarDB();
+    $('#appView').hidden = true;
+    dirActual = DIR_ADMIN;
+    llenarDirecciones();
+    llenarAreas();
+    mostrarHome();
+    toastAhora('Copia de seguridad restaurada');
+  } catch (ex) {
+    await showMessage('No se pudo restaurar: ' + ex.message, 'Error', 'error');
+  }
 }
 
 /* =====================================================================
@@ -3958,9 +4118,12 @@ function inicializar() {
     if (b) { cambiarPeriodo(b.dataset.per); activarTab('captura'); }
   });
   $('#mailList').addEventListener('click', function (e) {
+    const sd = e.target.closest('[data-send]');
+    if (sd) { enviarRapido(Number(sd.dataset.send)); return; }
     const b = e.target.closest('[data-i]');
     if (b) abrirCorreoResponsable(Number(b.dataset.i));
   });
+  $('#btnEnviarTodos').onclick = enviarATodos;
   $('#btnCorreoCompleto').onclick = abrirCorreoCompleto;
   $('#btnConfigEnvio').onclick = dlgConfigEnvio;
 
@@ -3978,6 +4141,8 @@ function inicializar() {
   $('#btnQuitarArea').onclick = btnQuitarArea_Click;
   $('#btnCrearPrimeraArea').onclick = btnNuevaArea_Click;
   $('#navNuevaDir').onclick = nuevaDireccion;
+  $('#btnRespaldo').onclick = descargarRespaldo;
+  $('#btnRestaurar').onclick = restaurarRespaldo;
   $('#navDirs').addEventListener('click', clickSidebar);
   $('#btnMenu').onclick = function () {
     const abierto = $('#side').classList.toggle('open');
